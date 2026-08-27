@@ -48,12 +48,22 @@ class _MainNavigationState extends State<MainNavigation> {
     'Digital Intelligence',
   ];
 
-  final List<Widget> _pages = const [
-    DashboardPage(),
-    AnalyticsPage(),
-    GrowthPage(),
-    IntelligencePage(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      DashboardPage(onTabRequested: (index) {
+        setState(() {
+          _currentIndex = index;
+        });
+      }),
+      const AnalyticsPage(),
+      const GrowthPage(),
+      const IntelligencePage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
