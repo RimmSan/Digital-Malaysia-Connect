@@ -1,1 +1,4207 @@
-[{"state":"Selangor","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":7454.2},{"state":"Johor","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":4224.3},{"state":"Sabah","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":3767.0},{"state":"Perak","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":2577.9},{"state":"Sarawak","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":2539.8},{"state":"Kedah","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":2237.4},{"state":"W.P. Kuala Lumpur","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":2082.3},{"state":"Kelantan","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":1925.3},{"state":"Pulau Pinang","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":1808.3},{"state":"Pahang","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":1686.2},{"state":"Terengganu","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":1260.9},{"state":"Negeri Sembilan","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":1248.5},{"state":"Melaka","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":1057.4},{"state":"Perlis","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":297.3},{"state":"W.P. Putrajaya","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":121.4},{"state":"W.P. Labuan","date":"2026-01-01T00:00:00.000","sex":"both","age":"overall","ethnicity":"overall","population":101.1}]
+[
+  {
+    "state": "Johor",
+    "date": "1970-01-01",
+    "population": 1325.6
+  },
+  {
+    "state": "Johor",
+    "date": "1971-01-01",
+    "population": 1355.4
+  },
+  {
+    "state": "Johor",
+    "date": "1972-01-01",
+    "population": 1385.3
+  },
+  {
+    "state": "Johor",
+    "date": "1973-01-01",
+    "population": 1414.5
+  },
+  {
+    "state": "Johor",
+    "date": "1974-01-01",
+    "population": 1444.4
+  },
+  {
+    "state": "Johor",
+    "date": "1975-01-01",
+    "population": 1477.0
+  },
+  {
+    "state": "Johor",
+    "date": "1976-01-01",
+    "population": 1508.4
+  },
+  {
+    "state": "Johor",
+    "date": "1977-01-01",
+    "population": 1541.9
+  },
+  {
+    "state": "Johor",
+    "date": "1978-01-01",
+    "population": 1573.4
+  },
+  {
+    "state": "Johor",
+    "date": "1979-01-01",
+    "population": 1606.4
+  },
+  {
+    "state": "Johor",
+    "date": "1980-01-01",
+    "population": 1646.2
+  },
+  {
+    "state": "Johor",
+    "date": "1981-01-01",
+    "population": 1689.3
+  },
+  {
+    "state": "Johor",
+    "date": "1982-01-01",
+    "population": 1734.6
+  },
+  {
+    "state": "Johor",
+    "date": "1983-01-01",
+    "population": 1780.2
+  },
+  {
+    "state": "Johor",
+    "date": "1984-01-01",
+    "population": 1825.8
+  },
+  {
+    "state": "Johor",
+    "date": "1985-01-01",
+    "population": 1875.5
+  },
+  {
+    "state": "Johor",
+    "date": "1986-01-01",
+    "population": 1926.5
+  },
+  {
+    "state": "Johor",
+    "date": "1987-01-01",
+    "population": 1977.9
+  },
+  {
+    "state": "Johor",
+    "date": "1988-01-01",
+    "population": 2031.0
+  },
+  {
+    "state": "Johor",
+    "date": "1989-01-01",
+    "population": 2085.5
+  },
+  {
+    "state": "Johor",
+    "date": "1990-01-01",
+    "population": 2139.6
+  },
+  {
+    "state": "Johor",
+    "date": "1991-01-01",
+    "population": 2188.1
+  },
+  {
+    "state": "Johor",
+    "date": "1992-01-01",
+    "population": 2249.1
+  },
+  {
+    "state": "Johor",
+    "date": "1993-01-01",
+    "population": 2313.4
+  },
+  {
+    "state": "Johor",
+    "date": "1994-01-01",
+    "population": 2378.1
+  },
+  {
+    "state": "Johor",
+    "date": "1995-01-01",
+    "population": 2441.4
+  },
+  {
+    "state": "Johor",
+    "date": "1996-01-01",
+    "population": 2503.9
+  },
+  {
+    "state": "Johor",
+    "date": "1997-01-01",
+    "population": 2567.5
+  },
+  {
+    "state": "Johor",
+    "date": "1998-01-01",
+    "population": 2631.7
+  },
+  {
+    "state": "Johor",
+    "date": "1999-01-01",
+    "population": 2699.4
+  },
+  {
+    "state": "Johor",
+    "date": "2000-01-01",
+    "population": 2762.5
+  },
+  {
+    "state": "Johor",
+    "date": "2001-01-01",
+    "population": 2829.9
+  },
+  {
+    "state": "Johor",
+    "date": "2002-01-01",
+    "population": 2893.6
+  },
+  {
+    "state": "Johor",
+    "date": "2003-01-01",
+    "population": 2954.0
+  },
+  {
+    "state": "Johor",
+    "date": "2004-01-01",
+    "population": 3014.6
+  },
+  {
+    "state": "Johor",
+    "date": "2005-01-01",
+    "population": 3074.4
+  },
+  {
+    "state": "Johor",
+    "date": "2006-01-01",
+    "population": 3134.4
+  },
+  {
+    "state": "Johor",
+    "date": "2007-01-01",
+    "population": 3193.5
+  },
+  {
+    "state": "Johor",
+    "date": "2008-01-01",
+    "population": 3252.3
+  },
+  {
+    "state": "Johor",
+    "date": "2009-01-01",
+    "population": 3309.4
+  },
+  {
+    "state": "Johor",
+    "date": "2010-01-01",
+    "population": 3362.9
+  },
+  {
+    "state": "Johor",
+    "date": "2011-01-01",
+    "population": 3410.5
+  },
+  {
+    "state": "Johor",
+    "date": "2012-01-01",
+    "population": 3450.4
+  },
+  {
+    "state": "Johor",
+    "date": "2013-01-01",
+    "population": 3474.4
+  },
+  {
+    "state": "Johor",
+    "date": "2014-01-01",
+    "population": 3559.8
+  },
+  {
+    "state": "Johor",
+    "date": "2015-01-01",
+    "population": 3610.3
+  },
+  {
+    "state": "Johor",
+    "date": "2016-01-01",
+    "population": 3651.8
+  },
+  {
+    "state": "Johor",
+    "date": "2017-01-01",
+    "population": 3697.0
+  },
+  {
+    "state": "Johor",
+    "date": "2018-01-01",
+    "population": 3749.4
+  },
+  {
+    "state": "Johor",
+    "date": "2019-01-01",
+    "population": 3761.2
+  },
+  {
+    "state": "Johor",
+    "date": "2020-01-01",
+    "population": 4009.7
+  },
+  {
+    "state": "Johor",
+    "date": "2021-01-01",
+    "population": 4020.0
+  },
+  {
+    "state": "Johor",
+    "date": "2022-01-01",
+    "population": 4028.3
+  },
+  {
+    "state": "Johor",
+    "date": "2023-01-01",
+    "population": 4107.2
+  },
+  {
+    "state": "Johor",
+    "date": "2024-01-01",
+    "population": 4184.4
+  },
+  {
+    "state": "Johor",
+    "date": "2025-01-01",
+    "population": 4204.1
+  },
+  {
+    "state": "Johor",
+    "date": "2026-01-01",
+    "population": 4224.3
+  },
+  {
+    "state": "Kedah",
+    "date": "1970-01-01",
+    "population": 989.5
+  },
+  {
+    "state": "Kedah",
+    "date": "1971-01-01",
+    "population": 1003.9
+  },
+  {
+    "state": "Kedah",
+    "date": "1972-01-01",
+    "population": 1017.3
+  },
+  {
+    "state": "Kedah",
+    "date": "1973-01-01",
+    "population": 1029.0
+  },
+  {
+    "state": "Kedah",
+    "date": "1974-01-01",
+    "population": 1041.1
+  },
+  {
+    "state": "Kedah",
+    "date": "1975-01-01",
+    "population": 1054.9
+  },
+  {
+    "state": "Kedah",
+    "date": "1976-01-01",
+    "population": 1065.4
+  },
+  {
+    "state": "Kedah",
+    "date": "1977-01-01",
+    "population": 1079.8
+  },
+  {
+    "state": "Kedah",
+    "date": "1978-01-01",
+    "population": 1090.9
+  },
+  {
+    "state": "Kedah",
+    "date": "1979-01-01",
+    "population": 1103.4
+  },
+  {
+    "state": "Kedah",
+    "date": "1980-01-01",
+    "population": 1119.9
+  },
+  {
+    "state": "Kedah",
+    "date": "1981-01-01",
+    "population": 1140.2
+  },
+  {
+    "state": "Kedah",
+    "date": "1982-01-01",
+    "population": 1161.8
+  },
+  {
+    "state": "Kedah",
+    "date": "1983-01-01",
+    "population": 1183.9
+  },
+  {
+    "state": "Kedah",
+    "date": "1984-01-01",
+    "population": 1206.1
+  },
+  {
+    "state": "Kedah",
+    "date": "1985-01-01",
+    "population": 1230.8
+  },
+  {
+    "state": "Kedah",
+    "date": "1986-01-01",
+    "population": 1256.2
+  },
+  {
+    "state": "Kedah",
+    "date": "1987-01-01",
+    "population": 1281.1
+  },
+  {
+    "state": "Kedah",
+    "date": "1988-01-01",
+    "population": 1305.4
+  },
+  {
+    "state": "Kedah",
+    "date": "1989-01-01",
+    "population": 1328.8
+  },
+  {
+    "state": "Kedah",
+    "date": "1990-01-01",
+    "population": 1352.2
+  },
+  {
+    "state": "Kedah",
+    "date": "1991-01-01",
+    "population": 1371.3
+  },
+  {
+    "state": "Kedah",
+    "date": "1992-01-01",
+    "population": 1402.1
+  },
+  {
+    "state": "Kedah",
+    "date": "1993-01-01",
+    "population": 1434.1
+  },
+  {
+    "state": "Kedah",
+    "date": "1994-01-01",
+    "population": 1466.6
+  },
+  {
+    "state": "Kedah",
+    "date": "1995-01-01",
+    "population": 1500.2
+  },
+  {
+    "state": "Kedah",
+    "date": "1996-01-01",
+    "population": 1533.2
+  },
+  {
+    "state": "Kedah",
+    "date": "1997-01-01",
+    "population": 1566.9
+  },
+  {
+    "state": "Kedah",
+    "date": "1998-01-01",
+    "population": 1601.2
+  },
+  {
+    "state": "Kedah",
+    "date": "1999-01-01",
+    "population": 1636.5
+  },
+  {
+    "state": "Kedah",
+    "date": "2000-01-01",
+    "population": 1671.9
+  },
+  {
+    "state": "Kedah",
+    "date": "2001-01-01",
+    "population": 1703.9
+  },
+  {
+    "state": "Kedah",
+    "date": "2002-01-01",
+    "population": 1734.8
+  },
+  {
+    "state": "Kedah",
+    "date": "2003-01-01",
+    "population": 1763.7
+  },
+  {
+    "state": "Kedah",
+    "date": "2004-01-01",
+    "population": 1792.4
+  },
+  {
+    "state": "Kedah",
+    "date": "2005-01-01",
+    "population": 1820.3
+  },
+  {
+    "state": "Kedah",
+    "date": "2006-01-01",
+    "population": 1847.5
+  },
+  {
+    "state": "Kedah",
+    "date": "2007-01-01",
+    "population": 1874.2
+  },
+  {
+    "state": "Kedah",
+    "date": "2008-01-01",
+    "population": 1900.2
+  },
+  {
+    "state": "Kedah",
+    "date": "2009-01-01",
+    "population": 1925.3
+  },
+  {
+    "state": "Kedah",
+    "date": "2010-01-01",
+    "population": 1949.3
+  },
+  {
+    "state": "Kedah",
+    "date": "2011-01-01",
+    "population": 1971.8
+  },
+  {
+    "state": "Kedah",
+    "date": "2012-01-01",
+    "population": 2001.1
+  },
+  {
+    "state": "Kedah",
+    "date": "2013-01-01",
+    "population": 2039.8
+  },
+  {
+    "state": "Kedah",
+    "date": "2014-01-01",
+    "population": 2062.7
+  },
+  {
+    "state": "Kedah",
+    "date": "2015-01-01",
+    "population": 2096.5
+  },
+  {
+    "state": "Kedah",
+    "date": "2016-01-01",
+    "population": 2119.7
+  },
+  {
+    "state": "Kedah",
+    "date": "2017-01-01",
+    "population": 2143.9
+  },
+  {
+    "state": "Kedah",
+    "date": "2018-01-01",
+    "population": 2163.0
+  },
+  {
+    "state": "Kedah",
+    "date": "2019-01-01",
+    "population": 2173.7
+  },
+  {
+    "state": "Kedah",
+    "date": "2020-01-01",
+    "population": 2131.4
+  },
+  {
+    "state": "Kedah",
+    "date": "2021-01-01",
+    "population": 2151.7
+  },
+  {
+    "state": "Kedah",
+    "date": "2022-01-01",
+    "population": 2163.1
+  },
+  {
+    "state": "Kedah",
+    "date": "2023-01-01",
+    "population": 2189.3
+  },
+  {
+    "state": "Kedah",
+    "date": "2024-01-01",
+    "population": 2217.1
+  },
+  {
+    "state": "Kedah",
+    "date": "2025-01-01",
+    "population": 2227.1
+  },
+  {
+    "state": "Kedah",
+    "date": "2026-01-01",
+    "population": 2237.4
+  },
+  {
+    "state": "Kelantan",
+    "date": "1970-01-01",
+    "population": 707.3
+  },
+  {
+    "state": "Kelantan",
+    "date": "1971-01-01",
+    "population": 723.6
+  },
+  {
+    "state": "Kelantan",
+    "date": "1972-01-01",
+    "population": 741.1
+  },
+  {
+    "state": "Kelantan",
+    "date": "1973-01-01",
+    "population": 759.5
+  },
+  {
+    "state": "Kelantan",
+    "date": "1974-01-01",
+    "population": 776.8
+  },
+  {
+    "state": "Kelantan",
+    "date": "1975-01-01",
+    "population": 796.1
+  },
+  {
+    "state": "Kelantan",
+    "date": "1976-01-01",
+    "population": 814.1
+  },
+  {
+    "state": "Kelantan",
+    "date": "1977-01-01",
+    "population": 834.2
+  },
+  {
+    "state": "Kelantan",
+    "date": "1978-01-01",
+    "population": 852.5
+  },
+  {
+    "state": "Kelantan",
+    "date": "1979-01-01",
+    "population": 873.7
+  },
+  {
+    "state": "Kelantan",
+    "date": "1980-01-01",
+    "population": 895.7
+  },
+  {
+    "state": "Kelantan",
+    "date": "1981-01-01",
+    "population": 920.5
+  },
+  {
+    "state": "Kelantan",
+    "date": "1982-01-01",
+    "population": 947.1
+  },
+  {
+    "state": "Kelantan",
+    "date": "1983-01-01",
+    "population": 974.6
+  },
+  {
+    "state": "Kelantan",
+    "date": "1984-01-01",
+    "population": 1002.6
+  },
+  {
+    "state": "Kelantan",
+    "date": "1985-01-01",
+    "population": 1032.9
+  },
+  {
+    "state": "Kelantan",
+    "date": "1986-01-01",
+    "population": 1062.8
+  },
+  {
+    "state": "Kelantan",
+    "date": "1987-01-01",
+    "population": 1093.2
+  },
+  {
+    "state": "Kelantan",
+    "date": "1988-01-01",
+    "population": 1124.0
+  },
+  {
+    "state": "Kelantan",
+    "date": "1989-01-01",
+    "population": 1154.5
+  },
+  {
+    "state": "Kelantan",
+    "date": "1990-01-01",
+    "population": 1187.2
+  },
+  {
+    "state": "Kelantan",
+    "date": "1991-01-01",
+    "population": 1227.0
+  },
+  {
+    "state": "Kelantan",
+    "date": "1992-01-01",
+    "population": 1243.5
+  },
+  {
+    "state": "Kelantan",
+    "date": "1993-01-01",
+    "population": 1259.1
+  },
+  {
+    "state": "Kelantan",
+    "date": "1994-01-01",
+    "population": 1273.7
+  },
+  {
+    "state": "Kelantan",
+    "date": "1995-01-01",
+    "population": 1287.7
+  },
+  {
+    "state": "Kelantan",
+    "date": "1996-01-01",
+    "population": 1301.1
+  },
+  {
+    "state": "Kelantan",
+    "date": "1997-01-01",
+    "population": 1314.4
+  },
+  {
+    "state": "Kelantan",
+    "date": "1998-01-01",
+    "population": 1328.9
+  },
+  {
+    "state": "Kelantan",
+    "date": "1999-01-01",
+    "population": 1344.7
+  },
+  {
+    "state": "Kelantan",
+    "date": "2000-01-01",
+    "population": 1361.4
+  },
+  {
+    "state": "Kelantan",
+    "date": "2001-01-01",
+    "population": 1390.0
+  },
+  {
+    "state": "Kelantan",
+    "date": "2002-01-01",
+    "population": 1416.7
+  },
+  {
+    "state": "Kelantan",
+    "date": "2003-01-01",
+    "population": 1440.5
+  },
+  {
+    "state": "Kelantan",
+    "date": "2004-01-01",
+    "population": 1463.8
+  },
+  {
+    "state": "Kelantan",
+    "date": "2005-01-01",
+    "population": 1486.3
+  },
+  {
+    "state": "Kelantan",
+    "date": "2006-01-01",
+    "population": 1507.6
+  },
+  {
+    "state": "Kelantan",
+    "date": "2007-01-01",
+    "population": 1529.1
+  },
+  {
+    "state": "Kelantan",
+    "date": "2008-01-01",
+    "population": 1549.8
+  },
+  {
+    "state": "Kelantan",
+    "date": "2009-01-01",
+    "population": 1570.0
+  },
+  {
+    "state": "Kelantan",
+    "date": "2010-01-01",
+    "population": 1589.9
+  },
+  {
+    "state": "Kelantan",
+    "date": "2011-01-01",
+    "population": 1618.8
+  },
+  {
+    "state": "Kelantan",
+    "date": "2012-01-01",
+    "population": 1651.0
+  },
+  {
+    "state": "Kelantan",
+    "date": "2013-01-01",
+    "population": 1683.5
+  },
+  {
+    "state": "Kelantan",
+    "date": "2014-01-01",
+    "population": 1723.4
+  },
+  {
+    "state": "Kelantan",
+    "date": "2015-01-01",
+    "population": 1760.6
+  },
+  {
+    "state": "Kelantan",
+    "date": "2016-01-01",
+    "population": 1796.7
+  },
+  {
+    "state": "Kelantan",
+    "date": "2017-01-01",
+    "population": 1829.0
+  },
+  {
+    "state": "Kelantan",
+    "date": "2018-01-01",
+    "population": 1860.5
+  },
+  {
+    "state": "Kelantan",
+    "date": "2019-01-01",
+    "population": 1883.8
+  },
+  {
+    "state": "Kelantan",
+    "date": "2020-01-01",
+    "population": 1792.5
+  },
+  {
+    "state": "Kelantan",
+    "date": "2021-01-01",
+    "population": 1812.3
+  },
+  {
+    "state": "Kelantan",
+    "date": "2022-01-01",
+    "population": 1830.6
+  },
+  {
+    "state": "Kelantan",
+    "date": "2023-01-01",
+    "population": 1859.8
+  },
+  {
+    "state": "Kelantan",
+    "date": "2024-01-01",
+    "population": 1887.9
+  },
+  {
+    "state": "Kelantan",
+    "date": "2025-01-01",
+    "population": 1906.9
+  },
+  {
+    "state": "Kelantan",
+    "date": "2026-01-01",
+    "population": 1925.3
+  },
+  {
+    "state": "Melaka",
+    "date": "1970-01-01",
+    "population": 419.4
+  },
+  {
+    "state": "Melaka",
+    "date": "1971-01-01",
+    "population": 424.9
+  },
+  {
+    "state": "Melaka",
+    "date": "1972-01-01",
+    "population": 429.9
+  },
+  {
+    "state": "Melaka",
+    "date": "1973-01-01",
+    "population": 434.2
+  },
+  {
+    "state": "Melaka",
+    "date": "1974-01-01",
+    "population": 438.1
+  },
+  {
+    "state": "Melaka",
+    "date": "1975-01-01",
+    "population": 443.1
+  },
+  {
+    "state": "Melaka",
+    "date": "1976-01-01",
+    "population": 447.3
+  },
+  {
+    "state": "Melaka",
+    "date": "1977-01-01",
+    "population": 452.1
+  },
+  {
+    "state": "Melaka",
+    "date": "1978-01-01",
+    "population": 456.2
+  },
+  {
+    "state": "Melaka",
+    "date": "1979-01-01",
+    "population": 460.8
+  },
+  {
+    "state": "Melaka",
+    "date": "1980-01-01",
+    "population": 466.9
+  },
+  {
+    "state": "Melaka",
+    "date": "1981-01-01",
+    "population": 472.6
+  },
+  {
+    "state": "Melaka",
+    "date": "1982-01-01",
+    "population": 478.7
+  },
+  {
+    "state": "Melaka",
+    "date": "1983-01-01",
+    "population": 484.8
+  },
+  {
+    "state": "Melaka",
+    "date": "1984-01-01",
+    "population": 491.2
+  },
+  {
+    "state": "Melaka",
+    "date": "1985-01-01",
+    "population": 498.6
+  },
+  {
+    "state": "Melaka",
+    "date": "1986-01-01",
+    "population": 505.6
+  },
+  {
+    "state": "Melaka",
+    "date": "1987-01-01",
+    "population": 513.1
+  },
+  {
+    "state": "Melaka",
+    "date": "1988-01-01",
+    "population": 520.5
+  },
+  {
+    "state": "Melaka",
+    "date": "1989-01-01",
+    "population": 527.4
+  },
+  {
+    "state": "Melaka",
+    "date": "1990-01-01",
+    "population": 534.2
+  },
+  {
+    "state": "Melaka",
+    "date": "1991-01-01",
+    "population": 540.2
+  },
+  {
+    "state": "Melaka",
+    "date": "1992-01-01",
+    "population": 551.8
+  },
+  {
+    "state": "Melaka",
+    "date": "1993-01-01",
+    "population": 563.3
+  },
+  {
+    "state": "Melaka",
+    "date": "1994-01-01",
+    "population": 574.9
+  },
+  {
+    "state": "Melaka",
+    "date": "1995-01-01",
+    "population": 586.1
+  },
+  {
+    "state": "Melaka",
+    "date": "1996-01-01",
+    "population": 597.3
+  },
+  {
+    "state": "Melaka",
+    "date": "1997-01-01",
+    "population": 608.8
+  },
+  {
+    "state": "Melaka",
+    "date": "1998-01-01",
+    "population": 620.5
+  },
+  {
+    "state": "Melaka",
+    "date": "1999-01-01",
+    "population": 633.1
+  },
+  {
+    "state": "Melaka",
+    "date": "2000-01-01",
+    "population": 646.6
+  },
+  {
+    "state": "Melaka",
+    "date": "2001-01-01",
+    "population": 665.8
+  },
+  {
+    "state": "Melaka",
+    "date": "2002-01-01",
+    "population": 684.1
+  },
+  {
+    "state": "Melaka",
+    "date": "2003-01-01",
+    "population": 701.8
+  },
+  {
+    "state": "Melaka",
+    "date": "2004-01-01",
+    "population": 719.8
+  },
+  {
+    "state": "Melaka",
+    "date": "2005-01-01",
+    "population": 737.3
+  },
+  {
+    "state": "Melaka",
+    "date": "2006-01-01",
+    "population": 755.0
+  },
+  {
+    "state": "Melaka",
+    "date": "2007-01-01",
+    "population": 772.8
+  },
+  {
+    "state": "Melaka",
+    "date": "2008-01-01",
+    "population": 790.5
+  },
+  {
+    "state": "Melaka",
+    "date": "2009-01-01",
+    "population": 807.8
+  },
+  {
+    "state": "Melaka",
+    "date": "2010-01-01",
+    "population": 823.6
+  },
+  {
+    "state": "Melaka",
+    "date": "2011-01-01",
+    "population": 833.2
+  },
+  {
+    "state": "Melaka",
+    "date": "2012-01-01",
+    "population": 843.2
+  },
+  {
+    "state": "Melaka",
+    "date": "2013-01-01",
+    "population": 856.7
+  },
+  {
+    "state": "Melaka",
+    "date": "2014-01-01",
+    "population": 871.7
+  },
+  {
+    "state": "Melaka",
+    "date": "2015-01-01",
+    "population": 889.0
+  },
+  {
+    "state": "Melaka",
+    "date": "2016-01-01",
+    "population": 901.1
+  },
+  {
+    "state": "Melaka",
+    "date": "2017-01-01",
+    "population": 913.1
+  },
+  {
+    "state": "Melaka",
+    "date": "2018-01-01",
+    "population": 922.4
+  },
+  {
+    "state": "Melaka",
+    "date": "2019-01-01",
+    "population": 928.4
+  },
+  {
+    "state": "Melaka",
+    "date": "2020-01-01",
+    "population": 998.4
+  },
+  {
+    "state": "Melaka",
+    "date": "2021-01-01",
+    "population": 1004.5
+  },
+  {
+    "state": "Melaka",
+    "date": "2022-01-01",
+    "population": 1008.6
+  },
+  {
+    "state": "Melaka",
+    "date": "2023-01-01",
+    "population": 1028.3
+  },
+  {
+    "state": "Melaka",
+    "date": "2024-01-01",
+    "population": 1046.7
+  },
+  {
+    "state": "Melaka",
+    "date": "2025-01-01",
+    "population": 1052.0
+  },
+  {
+    "state": "Melaka",
+    "date": "2026-01-01",
+    "population": 1057.4
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1970-01-01",
+    "population": 500.4
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1971-01-01",
+    "population": 508.2
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1972-01-01",
+    "population": 515.9
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1973-01-01",
+    "population": 522.8
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1974-01-01",
+    "population": 530.0
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1975-01-01",
+    "population": 537.6
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1976-01-01",
+    "population": 544.3
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1977-01-01",
+    "population": 551.8
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1978-01-01",
+    "population": 558.7
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1979-01-01",
+    "population": 566.4
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1980-01-01",
+    "population": 576.7
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1981-01-01",
+    "population": 587.2
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1982-01-01",
+    "population": 598.9
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1983-01-01",
+    "population": 611.3
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1984-01-01",
+    "population": 623.8
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1985-01-01",
+    "population": 638.4
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1986-01-01",
+    "population": 653.7
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1987-01-01",
+    "population": 668.9
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1988-01-01",
+    "population": 683.5
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1989-01-01",
+    "population": 698.2
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1990-01-01",
+    "population": 713.4
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1991-01-01",
+    "population": 726.2
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1992-01-01",
+    "population": 741.7
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1993-01-01",
+    "population": 757.0
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1994-01-01",
+    "population": 772.4
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1995-01-01",
+    "population": 787.5
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1996-01-01",
+    "population": 802.6
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1997-01-01",
+    "population": 818.0
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1998-01-01",
+    "population": 833.5
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "1999-01-01",
+    "population": 849.5
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2000-01-01",
+    "population": 866.1
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2001-01-01",
+    "population": 883.7
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2002-01-01",
+    "population": 900.3
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2003-01-01",
+    "population": 916.8
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2004-01-01",
+    "population": 933.7
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2005-01-01",
+    "population": 950.3
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2006-01-01",
+    "population": 967.0
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2007-01-01",
+    "population": 983.5
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2008-01-01",
+    "population": 999.6
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2009-01-01",
+    "population": 1014.9
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2010-01-01",
+    "population": 1029.5
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2011-01-01",
+    "population": 1047.4
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2012-01-01",
+    "population": 1057.7
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2013-01-01",
+    "population": 1072.2
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2014-01-01",
+    "population": 1079.6
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2015-01-01",
+    "population": 1088.8
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2016-01-01",
+    "population": 1099.3
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2017-01-01",
+    "population": 1114.0
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2018-01-01",
+    "population": 1122.9
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2019-01-01",
+    "population": 1126.2
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2020-01-01",
+    "population": 1200.0
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2021-01-01",
+    "population": 1204.2
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2022-01-01",
+    "population": 1207.9
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2023-01-01",
+    "population": 1224.9
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2024-01-01",
+    "population": 1239.5
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2025-01-01",
+    "population": 1243.9
+  },
+  {
+    "state": "Negeri Sembilan",
+    "date": "2026-01-01",
+    "population": 1248.5
+  },
+  {
+    "state": "Pahang",
+    "date": "1970-01-01",
+    "population": 523.8
+  },
+  {
+    "state": "Pahang",
+    "date": "1971-01-01",
+    "population": 548.4
+  },
+  {
+    "state": "Pahang",
+    "date": "1972-01-01",
+    "population": 574.0
+  },
+  {
+    "state": "Pahang",
+    "date": "1973-01-01",
+    "population": 599.3
+  },
+  {
+    "state": "Pahang",
+    "date": "1974-01-01",
+    "population": 626.0
+  },
+  {
+    "state": "Pahang",
+    "date": "1975-01-01",
+    "population": 653.4
+  },
+  {
+    "state": "Pahang",
+    "date": "1976-01-01",
+    "population": 680.4
+  },
+  {
+    "state": "Pahang",
+    "date": "1977-01-01",
+    "population": 709.5
+  },
+  {
+    "state": "Pahang",
+    "date": "1978-01-01",
+    "population": 738.2
+  },
+  {
+    "state": "Pahang",
+    "date": "1979-01-01",
+    "population": 768.4
+  },
+  {
+    "state": "Pahang",
+    "date": "1980-01-01",
+    "population": 802.1
+  },
+  {
+    "state": "Pahang",
+    "date": "1981-01-01",
+    "population": 820.6
+  },
+  {
+    "state": "Pahang",
+    "date": "1982-01-01",
+    "population": 842.3
+  },
+  {
+    "state": "Pahang",
+    "date": "1983-01-01",
+    "population": 864.8
+  },
+  {
+    "state": "Pahang",
+    "date": "1984-01-01",
+    "population": 888.7
+  },
+  {
+    "state": "Pahang",
+    "date": "1985-01-01",
+    "population": 915.2
+  },
+  {
+    "state": "Pahang",
+    "date": "1986-01-01",
+    "population": 943.5
+  },
+  {
+    "state": "Pahang",
+    "date": "1987-01-01",
+    "population": 971.0
+  },
+  {
+    "state": "Pahang",
+    "date": "1988-01-01",
+    "population": 998.4
+  },
+  {
+    "state": "Pahang",
+    "date": "1989-01-01",
+    "population": 1025.9
+  },
+  {
+    "state": "Pahang",
+    "date": "1990-01-01",
+    "population": 1054.3
+  },
+  {
+    "state": "Pahang",
+    "date": "1991-01-01",
+    "population": 1079.6
+  },
+  {
+    "state": "Pahang",
+    "date": "1992-01-01",
+    "population": 1104.2
+  },
+  {
+    "state": "Pahang",
+    "date": "1993-01-01",
+    "population": 1128.0
+  },
+  {
+    "state": "Pahang",
+    "date": "1994-01-01",
+    "population": 1152.3
+  },
+  {
+    "state": "Pahang",
+    "date": "1995-01-01",
+    "population": 1176.5
+  },
+  {
+    "state": "Pahang",
+    "date": "1996-01-01",
+    "population": 1200.6
+  },
+  {
+    "state": "Pahang",
+    "date": "1997-01-01",
+    "population": 1224.7
+  },
+  {
+    "state": "Pahang",
+    "date": "1998-01-01",
+    "population": 1248.8
+  },
+  {
+    "state": "Pahang",
+    "date": "1999-01-01",
+    "population": 1272.5
+  },
+  {
+    "state": "Pahang",
+    "date": "2000-01-01",
+    "population": 1295.8
+  },
+  {
+    "state": "Pahang",
+    "date": "2001-01-01",
+    "population": 1317.3
+  },
+  {
+    "state": "Pahang",
+    "date": "2002-01-01",
+    "population": 1338.7
+  },
+  {
+    "state": "Pahang",
+    "date": "2003-01-01",
+    "population": 1360.0
+  },
+  {
+    "state": "Pahang",
+    "date": "2004-01-01",
+    "population": 1380.2
+  },
+  {
+    "state": "Pahang",
+    "date": "2005-01-01",
+    "population": 1400.8
+  },
+  {
+    "state": "Pahang",
+    "date": "2006-01-01",
+    "population": 1421.2
+  },
+  {
+    "state": "Pahang",
+    "date": "2007-01-01",
+    "population": 1441.4
+  },
+  {
+    "state": "Pahang",
+    "date": "2008-01-01",
+    "population": 1461.6
+  },
+  {
+    "state": "Pahang",
+    "date": "2009-01-01",
+    "population": 1481.7
+  },
+  {
+    "state": "Pahang",
+    "date": "2010-01-01",
+    "population": 1501.9
+  },
+  {
+    "state": "Pahang",
+    "date": "2011-01-01",
+    "population": 1526.8
+  },
+  {
+    "state": "Pahang",
+    "date": "2012-01-01",
+    "population": 1547.1
+  },
+  {
+    "state": "Pahang",
+    "date": "2013-01-01",
+    "population": 1568.7
+  },
+  {
+    "state": "Pahang",
+    "date": "2014-01-01",
+    "population": 1591.7
+  },
+  {
+    "state": "Pahang",
+    "date": "2015-01-01",
+    "population": 1607.9
+  },
+  {
+    "state": "Pahang",
+    "date": "2016-01-01",
+    "population": 1626.7
+  },
+  {
+    "state": "Pahang",
+    "date": "2017-01-01",
+    "population": 1647.0
+  },
+  {
+    "state": "Pahang",
+    "date": "2018-01-01",
+    "population": 1664.7
+  },
+  {
+    "state": "Pahang",
+    "date": "2019-01-01",
+    "population": 1671.4
+  },
+  {
+    "state": "Pahang",
+    "date": "2020-01-01",
+    "population": 1591.3
+  },
+  {
+    "state": "Pahang",
+    "date": "2021-01-01",
+    "population": 1601.5
+  },
+  {
+    "state": "Pahang",
+    "date": "2022-01-01",
+    "population": 1614.3
+  },
+  {
+    "state": "Pahang",
+    "date": "2023-01-01",
+    "population": 1643.2
+  },
+  {
+    "state": "Pahang",
+    "date": "2024-01-01",
+    "population": 1667.7
+  },
+  {
+    "state": "Pahang",
+    "date": "2025-01-01",
+    "population": 1676.8
+  },
+  {
+    "state": "Pahang",
+    "date": "2026-01-01",
+    "population": 1686.2
+  },
+  {
+    "state": "Perak",
+    "date": "1970-01-01",
+    "population": 1631.5
+  },
+  {
+    "state": "Perak",
+    "date": "1971-01-01",
+    "population": 1650.9
+  },
+  {
+    "state": "Perak",
+    "date": "1972-01-01",
+    "population": 1669.3
+  },
+  {
+    "state": "Perak",
+    "date": "1973-01-01",
+    "population": 1686.0
+  },
+  {
+    "state": "Perak",
+    "date": "1974-01-01",
+    "population": 1702.7
+  },
+  {
+    "state": "Perak",
+    "date": "1975-01-01",
+    "population": 1720.9
+  },
+  {
+    "state": "Perak",
+    "date": "1976-01-01",
+    "population": 1736.7
+  },
+  {
+    "state": "Perak",
+    "date": "1977-01-01",
+    "population": 1755.6
+  },
+  {
+    "state": "Perak",
+    "date": "1978-01-01",
+    "population": 1771.5
+  },
+  {
+    "state": "Perak",
+    "date": "1979-01-01",
+    "population": 1789.1
+  },
+  {
+    "state": "Perak",
+    "date": "1980-01-01",
+    "population": 1807.4
+  },
+  {
+    "state": "Perak",
+    "date": "1981-01-01",
+    "population": 1838.2
+  },
+  {
+    "state": "Perak",
+    "date": "1982-01-01",
+    "population": 1866.8
+  },
+  {
+    "state": "Perak",
+    "date": "1983-01-01",
+    "population": 1891.1
+  },
+  {
+    "state": "Perak",
+    "date": "1984-01-01",
+    "population": 1912.3
+  },
+  {
+    "state": "Perak",
+    "date": "1985-01-01",
+    "population": 1931.5
+  },
+  {
+    "state": "Perak",
+    "date": "1986-01-01",
+    "population": 1950.8
+  },
+  {
+    "state": "Perak",
+    "date": "1987-01-01",
+    "population": 1967.5
+  },
+  {
+    "state": "Perak",
+    "date": "1988-01-01",
+    "population": 1979.5
+  },
+  {
+    "state": "Perak",
+    "date": "1989-01-01",
+    "population": 1987.7
+  },
+  {
+    "state": "Perak",
+    "date": "1990-01-01",
+    "population": 1992.9
+  },
+  {
+    "state": "Perak",
+    "date": "1991-01-01",
+    "population": 1995.3
+  },
+  {
+    "state": "Perak",
+    "date": "1992-01-01",
+    "population": 2007.1
+  },
+  {
+    "state": "Perak",
+    "date": "1993-01-01",
+    "population": 2018.4
+  },
+  {
+    "state": "Perak",
+    "date": "1994-01-01",
+    "population": 2028.4
+  },
+  {
+    "state": "Perak",
+    "date": "1995-01-01",
+    "population": 2038.1
+  },
+  {
+    "state": "Perak",
+    "date": "1996-01-01",
+    "population": 2047.0
+  },
+  {
+    "state": "Perak",
+    "date": "1997-01-01",
+    "population": 2055.3
+  },
+  {
+    "state": "Perak",
+    "date": "1998-01-01",
+    "population": 2066.2
+  },
+  {
+    "state": "Perak",
+    "date": "1999-01-01",
+    "population": 2076.7
+  },
+  {
+    "state": "Perak",
+    "date": "2000-01-01",
+    "population": 2091.7
+  },
+  {
+    "state": "Perak",
+    "date": "2001-01-01",
+    "population": 2129.0
+  },
+  {
+    "state": "Perak",
+    "date": "2002-01-01",
+    "population": 2161.8
+  },
+  {
+    "state": "Perak",
+    "date": "2003-01-01",
+    "population": 2192.1
+  },
+  {
+    "state": "Perak",
+    "date": "2004-01-01",
+    "population": 2222.1
+  },
+  {
+    "state": "Perak",
+    "date": "2005-01-01",
+    "population": 2251.1
+  },
+  {
+    "state": "Perak",
+    "date": "2006-01-01",
+    "population": 2279.3
+  },
+  {
+    "state": "Perak",
+    "date": "2007-01-01",
+    "population": 2306.4
+  },
+  {
+    "state": "Perak",
+    "date": "2008-01-01",
+    "population": 2331.6
+  },
+  {
+    "state": "Perak",
+    "date": "2009-01-01",
+    "population": 2355.7
+  },
+  {
+    "state": "Perak",
+    "date": "2010-01-01",
+    "population": 2379.0
+  },
+  {
+    "state": "Perak",
+    "date": "2011-01-01",
+    "population": 2402.7
+  },
+  {
+    "state": "Perak",
+    "date": "2012-01-01",
+    "population": 2427.0
+  },
+  {
+    "state": "Perak",
+    "date": "2013-01-01",
+    "population": 2447.2
+  },
+  {
+    "state": "Perak",
+    "date": "2014-01-01",
+    "population": 2458.8
+  },
+  {
+    "state": "Perak",
+    "date": "2015-01-01",
+    "population": 2466.9
+  },
+  {
+    "state": "Perak",
+    "date": "2016-01-01",
+    "population": 2482.1
+  },
+  {
+    "state": "Perak",
+    "date": "2017-01-01",
+    "population": 2493.2
+  },
+  {
+    "state": "Perak",
+    "date": "2018-01-01",
+    "population": 2503.5
+  },
+  {
+    "state": "Perak",
+    "date": "2019-01-01",
+    "population": 2508.8
+  },
+  {
+    "state": "Perak",
+    "date": "2020-01-01",
+    "population": 2496.0
+  },
+  {
+    "state": "Perak",
+    "date": "2021-01-01",
+    "population": 2515.8
+  },
+  {
+    "state": "Perak",
+    "date": "2022-01-01",
+    "population": 2514.4
+  },
+  {
+    "state": "Perak",
+    "date": "2023-01-01",
+    "population": 2541.2
+  },
+  {
+    "state": "Perak",
+    "date": "2024-01-01",
+    "population": 2569.4
+  },
+  {
+    "state": "Perak",
+    "date": "2025-01-01",
+    "population": 2573.8
+  },
+  {
+    "state": "Perak",
+    "date": "2026-01-01",
+    "population": 2577.9
+  },
+  {
+    "state": "Perlis",
+    "date": "1970-01-01",
+    "population": 125.5
+  },
+  {
+    "state": "Perlis",
+    "date": "1971-01-01",
+    "population": 127.4
+  },
+  {
+    "state": "Perlis",
+    "date": "1972-01-01",
+    "population": 129.7
+  },
+  {
+    "state": "Perlis",
+    "date": "1973-01-01",
+    "population": 131.7
+  },
+  {
+    "state": "Perlis",
+    "date": "1974-01-01",
+    "population": 133.8
+  },
+  {
+    "state": "Perlis",
+    "date": "1975-01-01",
+    "population": 136.2
+  },
+  {
+    "state": "Perlis",
+    "date": "1976-01-01",
+    "population": 138.3
+  },
+  {
+    "state": "Perlis",
+    "date": "1977-01-01",
+    "population": 141.0
+  },
+  {
+    "state": "Perlis",
+    "date": "1978-01-01",
+    "population": 143.2
+  },
+  {
+    "state": "Perlis",
+    "date": "1979-01-01",
+    "population": 145.8
+  },
+  {
+    "state": "Perlis",
+    "date": "1980-01-01",
+    "population": 148.7
+  },
+  {
+    "state": "Perlis",
+    "date": "1981-01-01",
+    "population": 151.6
+  },
+  {
+    "state": "Perlis",
+    "date": "1982-01-01",
+    "population": 154.9
+  },
+  {
+    "state": "Perlis",
+    "date": "1983-01-01",
+    "population": 158.2
+  },
+  {
+    "state": "Perlis",
+    "date": "1984-01-01",
+    "population": 161.7
+  },
+  {
+    "state": "Perlis",
+    "date": "1985-01-01",
+    "population": 165.9
+  },
+  {
+    "state": "Perlis",
+    "date": "1986-01-01",
+    "population": 170.2
+  },
+  {
+    "state": "Perlis",
+    "date": "1987-01-01",
+    "population": 174.5
+  },
+  {
+    "state": "Perlis",
+    "date": "1988-01-01",
+    "population": 178.8
+  },
+  {
+    "state": "Perlis",
+    "date": "1989-01-01",
+    "population": 182.9
+  },
+  {
+    "state": "Perlis",
+    "date": "1990-01-01",
+    "population": 187.0
+  },
+  {
+    "state": "Perlis",
+    "date": "1991-01-01",
+    "population": 190.7
+  },
+  {
+    "state": "Perlis",
+    "date": "1992-01-01",
+    "population": 192.7
+  },
+  {
+    "state": "Perlis",
+    "date": "1993-01-01",
+    "population": 194.7
+  },
+  {
+    "state": "Perlis",
+    "date": "1994-01-01",
+    "population": 196.7
+  },
+  {
+    "state": "Perlis",
+    "date": "1995-01-01",
+    "population": 198.8
+  },
+  {
+    "state": "Perlis",
+    "date": "1996-01-01",
+    "population": 200.4
+  },
+  {
+    "state": "Perlis",
+    "date": "1997-01-01",
+    "population": 202.1
+  },
+  {
+    "state": "Perlis",
+    "date": "1998-01-01",
+    "population": 203.8
+  },
+  {
+    "state": "Perlis",
+    "date": "1999-01-01",
+    "population": 205.7
+  },
+  {
+    "state": "Perlis",
+    "date": "2000-01-01",
+    "population": 207.6
+  },
+  {
+    "state": "Perlis",
+    "date": "2001-01-01",
+    "population": 210.4
+  },
+  {
+    "state": "Perlis",
+    "date": "2002-01-01",
+    "population": 213.2
+  },
+  {
+    "state": "Perlis",
+    "date": "2003-01-01",
+    "population": 216.0
+  },
+  {
+    "state": "Perlis",
+    "date": "2004-01-01",
+    "population": 218.8
+  },
+  {
+    "state": "Perlis",
+    "date": "2005-01-01",
+    "population": 221.6
+  },
+  {
+    "state": "Perlis",
+    "date": "2006-01-01",
+    "population": 224.4
+  },
+  {
+    "state": "Perlis",
+    "date": "2007-01-01",
+    "population": 227.2
+  },
+  {
+    "state": "Perlis",
+    "date": "2008-01-01",
+    "population": 230.1
+  },
+  {
+    "state": "Perlis",
+    "date": "2009-01-01",
+    "population": 233.0
+  },
+  {
+    "state": "Perlis",
+    "date": "2010-01-01",
+    "population": 235.8
+  },
+  {
+    "state": "Perlis",
+    "date": "2011-01-01",
+    "population": 237.3
+  },
+  {
+    "state": "Perlis",
+    "date": "2012-01-01",
+    "population": 239.4
+  },
+  {
+    "state": "Perlis",
+    "date": "2013-01-01",
+    "population": 242.1
+  },
+  {
+    "state": "Perlis",
+    "date": "2014-01-01",
+    "population": 245.1
+  },
+  {
+    "state": "Perlis",
+    "date": "2015-01-01",
+    "population": 248.5
+  },
+  {
+    "state": "Perlis",
+    "date": "2016-01-01",
+    "population": 251.0
+  },
+  {
+    "state": "Perlis",
+    "date": "2017-01-01",
+    "population": 252.0
+  },
+  {
+    "state": "Perlis",
+    "date": "2018-01-01",
+    "population": 253.5
+  },
+  {
+    "state": "Perlis",
+    "date": "2019-01-01",
+    "population": 254.0
+  },
+  {
+    "state": "Perlis",
+    "date": "2020-01-01",
+    "population": 284.9
+  },
+  {
+    "state": "Perlis",
+    "date": "2021-01-01",
+    "population": 287.6
+  },
+  {
+    "state": "Perlis",
+    "date": "2022-01-01",
+    "population": 289.8
+  },
+  {
+    "state": "Perlis",
+    "date": "2023-01-01",
+    "population": 293.1
+  },
+  {
+    "state": "Perlis",
+    "date": "2024-01-01",
+    "population": 296.8
+  },
+  {
+    "state": "Perlis",
+    "date": "2025-01-01",
+    "population": 297.0
+  },
+  {
+    "state": "Perlis",
+    "date": "2026-01-01",
+    "population": 297.3
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1970-01-01",
+    "population": 808.6
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1971-01-01",
+    "population": 823.7
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1972-01-01",
+    "population": 838.9
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1973-01-01",
+    "population": 852.9
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1974-01-01",
+    "population": 866.7
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1975-01-01",
+    "population": 881.7
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1976-01-01",
+    "population": 896.4
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1977-01-01",
+    "population": 912.2
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1978-01-01",
+    "population": 925.7
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1979-01-01",
+    "population": 940.4
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1980-01-01",
+    "population": 960.7
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1981-01-01",
+    "population": 975.4
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1982-01-01",
+    "population": 990.9
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1983-01-01",
+    "population": 1006.2
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1984-01-01",
+    "population": 1021.1
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1985-01-01",
+    "population": 1037.9
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1986-01-01",
+    "population": 1054.8
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1987-01-01",
+    "population": 1070.5
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1988-01-01",
+    "population": 1086.6
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1989-01-01",
+    "population": 1103.4
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1990-01-01",
+    "population": 1118.5
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1991-01-01",
+    "population": 1133.6
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1992-01-01",
+    "population": 1154.0
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1993-01-01",
+    "population": 1174.7
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1994-01-01",
+    "population": 1195.9
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1995-01-01",
+    "population": 1216.6
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1996-01-01",
+    "population": 1237.5
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1997-01-01",
+    "population": 1259.0
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1998-01-01",
+    "population": 1282.7
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "1999-01-01",
+    "population": 1307.5
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2000-01-01",
+    "population": 1332.7
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2001-01-01",
+    "population": 1361.0
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2002-01-01",
+    "population": 1387.3
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2003-01-01",
+    "population": 1412.2
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2004-01-01",
+    "population": 1436.6
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2005-01-01",
+    "population": 1460.4
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2006-01-01",
+    "population": 1484.1
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2007-01-01",
+    "population": 1507.8
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2008-01-01",
+    "population": 1531.3
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2009-01-01",
+    "population": 1554.3
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2010-01-01",
+    "population": 1575.9
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2011-01-01",
+    "population": 1601.0
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2012-01-01",
+    "population": 1623.2
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2013-01-01",
+    "population": 1662.6
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2014-01-01",
+    "population": 1678.1
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2015-01-01",
+    "population": 1698.1
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2016-01-01",
+    "population": 1717.7
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2017-01-01",
+    "population": 1744.1
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2018-01-01",
+    "population": 1762.8
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2019-01-01",
+    "population": 1768.8
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2020-01-01",
+    "population": 1740.4
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2021-01-01",
+    "population": 1740.0
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2022-01-01",
+    "population": 1740.9
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2023-01-01",
+    "population": 1772.6
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2024-01-01",
+    "population": 1800.5
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2025-01-01",
+    "population": 1804.3
+  },
+  {
+    "state": "Pulau Pinang",
+    "date": "2026-01-01",
+    "population": 1808.3
+  },
+  {
+    "state": "Sabah",
+    "date": "1970-01-01",
+    "population": 698.1
+  },
+  {
+    "state": "Sabah",
+    "date": "1971-01-01",
+    "population": 728.1
+  },
+  {
+    "state": "Sabah",
+    "date": "1972-01-01",
+    "population": 759.5
+  },
+  {
+    "state": "Sabah",
+    "date": "1973-01-01",
+    "population": 792.4
+  },
+  {
+    "state": "Sabah",
+    "date": "1974-01-01",
+    "population": 826.9
+  },
+  {
+    "state": "Sabah",
+    "date": "1975-01-01",
+    "population": 863.0
+  },
+  {
+    "state": "Sabah",
+    "date": "1976-01-01",
+    "population": 898.1
+  },
+  {
+    "state": "Sabah",
+    "date": "1977-01-01",
+    "population": 934.8
+  },
+  {
+    "state": "Sabah",
+    "date": "1978-01-01",
+    "population": 973.2
+  },
+  {
+    "state": "Sabah",
+    "date": "1979-01-01",
+    "population": 1013.3
+  },
+  {
+    "state": "Sabah",
+    "date": "1980-01-01",
+    "population": 1055.1
+  },
+  {
+    "state": "Sabah",
+    "date": "1981-01-01",
+    "population": 1119.6
+  },
+  {
+    "state": "Sabah",
+    "date": "1982-01-01",
+    "population": 1186.5
+  },
+  {
+    "state": "Sabah",
+    "date": "1983-01-01",
+    "population": 1255.1
+  },
+  {
+    "state": "Sabah",
+    "date": "1984-01-01",
+    "population": 1325.7
+  },
+  {
+    "state": "Sabah",
+    "date": "1985-01-01",
+    "population": 1398.7
+  },
+  {
+    "state": "Sabah",
+    "date": "1986-01-01",
+    "population": 1474.4
+  },
+  {
+    "state": "Sabah",
+    "date": "1987-01-01",
+    "population": 1550.8
+  },
+  {
+    "state": "Sabah",
+    "date": "1988-01-01",
+    "population": 1629.5
+  },
+  {
+    "state": "Sabah",
+    "date": "1989-01-01",
+    "population": 1708.9
+  },
+  {
+    "state": "Sabah",
+    "date": "1990-01-01",
+    "population": 1787.6
+  },
+  {
+    "state": "Sabah",
+    "date": "1991-01-01",
+    "population": 1814.5
+  },
+  {
+    "state": "Sabah",
+    "date": "1992-01-01",
+    "population": 1896.6
+  },
+  {
+    "state": "Sabah",
+    "date": "1993-01-01",
+    "population": 1981.9
+  },
+  {
+    "state": "Sabah",
+    "date": "1994-01-01",
+    "population": 2068.9
+  },
+  {
+    "state": "Sabah",
+    "date": "1995-01-01",
+    "population": 2155.9
+  },
+  {
+    "state": "Sabah",
+    "date": "1996-01-01",
+    "population": 2245.0
+  },
+  {
+    "state": "Sabah",
+    "date": "1997-01-01",
+    "population": 2333.7
+  },
+  {
+    "state": "Sabah",
+    "date": "1998-01-01",
+    "population": 2423.5
+  },
+  {
+    "state": "Sabah",
+    "date": "1999-01-01",
+    "population": 2513.5
+  },
+  {
+    "state": "Sabah",
+    "date": "2000-01-01",
+    "population": 2603.5
+  },
+  {
+    "state": "Sabah",
+    "date": "2001-01-01",
+    "population": 2663.3
+  },
+  {
+    "state": "Sabah",
+    "date": "2002-01-01",
+    "population": 2719.1
+  },
+  {
+    "state": "Sabah",
+    "date": "2003-01-01",
+    "population": 2774.0
+  },
+  {
+    "state": "Sabah",
+    "date": "2004-01-01",
+    "population": 2833.4
+  },
+  {
+    "state": "Sabah",
+    "date": "2005-01-01",
+    "population": 2897.0
+  },
+  {
+    "state": "Sabah",
+    "date": "2006-01-01",
+    "population": 2962.9
+  },
+  {
+    "state": "Sabah",
+    "date": "2007-01-01",
+    "population": 3032.3
+  },
+  {
+    "state": "Sabah",
+    "date": "2008-01-01",
+    "population": 3105.1
+  },
+  {
+    "state": "Sabah",
+    "date": "2009-01-01",
+    "population": 3181.1
+  },
+  {
+    "state": "Sabah",
+    "date": "2010-01-01",
+    "population": 3260.0
+  },
+  {
+    "state": "Sabah",
+    "date": "2011-01-01",
+    "population": 3345.5
+  },
+  {
+    "state": "Sabah",
+    "date": "2012-01-01",
+    "population": 3432.7
+  },
+  {
+    "state": "Sabah",
+    "date": "2013-01-01",
+    "population": 3611.5
+  },
+  {
+    "state": "Sabah",
+    "date": "2014-01-01",
+    "population": 3669.9
+  },
+  {
+    "state": "Sabah",
+    "date": "2015-01-01",
+    "population": 3720.5
+  },
+  {
+    "state": "Sabah",
+    "date": "2016-01-01",
+    "population": 3802.8
+  },
+  {
+    "state": "Sabah",
+    "date": "2017-01-01",
+    "population": 3855.9
+  },
+  {
+    "state": "Sabah",
+    "date": "2018-01-01",
+    "population": 3898.4
+  },
+  {
+    "state": "Sabah",
+    "date": "2019-01-01",
+    "population": 3904.4
+  },
+  {
+    "state": "Sabah",
+    "date": "2020-01-01",
+    "population": 3418.8
+  },
+  {
+    "state": "Sabah",
+    "date": "2021-01-01",
+    "population": 3412.6
+  },
+  {
+    "state": "Sabah",
+    "date": "2022-01-01",
+    "population": 3414.9
+  },
+  {
+    "state": "Sabah",
+    "date": "2023-01-01",
+    "population": 3596.7
+  },
+  {
+    "state": "Sabah",
+    "date": "2024-01-01",
+    "population": 3742.0
+  },
+  {
+    "state": "Sabah",
+    "date": "2025-01-01",
+    "population": 3754.5
+  },
+  {
+    "state": "Sabah",
+    "date": "2026-01-01",
+    "population": 3767.0
+  },
+  {
+    "state": "Sarawak",
+    "date": "1970-01-01",
+    "population": 1037.0
+  },
+  {
+    "state": "Sarawak",
+    "date": "1971-01-01",
+    "population": 1065.2
+  },
+  {
+    "state": "Sarawak",
+    "date": "1972-01-01",
+    "population": 1094.3
+  },
+  {
+    "state": "Sarawak",
+    "date": "1973-01-01",
+    "population": 1124.1
+  },
+  {
+    "state": "Sarawak",
+    "date": "1974-01-01",
+    "population": 1154.7
+  },
+  {
+    "state": "Sarawak",
+    "date": "1975-01-01",
+    "population": 1186.2
+  },
+  {
+    "state": "Sarawak",
+    "date": "1976-01-01",
+    "population": 1217.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "1977-01-01",
+    "population": 1249.6
+  },
+  {
+    "state": "Sarawak",
+    "date": "1978-01-01",
+    "population": 1282.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "1979-01-01",
+    "population": 1316.4
+  },
+  {
+    "state": "Sarawak",
+    "date": "1980-01-01",
+    "population": 1351.1
+  },
+  {
+    "state": "Sarawak",
+    "date": "1981-01-01",
+    "population": 1380.2
+  },
+  {
+    "state": "Sarawak",
+    "date": "1982-01-01",
+    "population": 1410.4
+  },
+  {
+    "state": "Sarawak",
+    "date": "1983-01-01",
+    "population": 1440.6
+  },
+  {
+    "state": "Sarawak",
+    "date": "1984-01-01",
+    "population": 1471.4
+  },
+  {
+    "state": "Sarawak",
+    "date": "1985-01-01",
+    "population": 1503.9
+  },
+  {
+    "state": "Sarawak",
+    "date": "1986-01-01",
+    "population": 1539.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "1987-01-01",
+    "population": 1576.0
+  },
+  {
+    "state": "Sarawak",
+    "date": "1988-01-01",
+    "population": 1614.6
+  },
+  {
+    "state": "Sarawak",
+    "date": "1989-01-01",
+    "population": 1652.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "1990-01-01",
+    "population": 1687.8
+  },
+  {
+    "state": "Sarawak",
+    "date": "1991-01-01",
+    "population": 1723.8
+  },
+  {
+    "state": "Sarawak",
+    "date": "1992-01-01",
+    "population": 1758.4
+  },
+  {
+    "state": "Sarawak",
+    "date": "1993-01-01",
+    "population": 1795.2
+  },
+  {
+    "state": "Sarawak",
+    "date": "1994-01-01",
+    "population": 1831.9
+  },
+  {
+    "state": "Sarawak",
+    "date": "1995-01-01",
+    "population": 1868.1
+  },
+  {
+    "state": "Sarawak",
+    "date": "1996-01-01",
+    "population": 1904.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "1997-01-01",
+    "population": 1942.4
+  },
+  {
+    "state": "Sarawak",
+    "date": "1998-01-01",
+    "population": 1982.1
+  },
+  {
+    "state": "Sarawak",
+    "date": "1999-01-01",
+    "population": 2024.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "2000-01-01",
+    "population": 2071.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "2001-01-01",
+    "population": 2115.6
+  },
+  {
+    "state": "Sarawak",
+    "date": "2002-01-01",
+    "population": 2158.3
+  },
+  {
+    "state": "Sarawak",
+    "date": "2003-01-01",
+    "population": 2199.0
+  },
+  {
+    "state": "Sarawak",
+    "date": "2004-01-01",
+    "population": 2240.4
+  },
+  {
+    "state": "Sarawak",
+    "date": "2005-01-01",
+    "population": 2282.4
+  },
+  {
+    "state": "Sarawak",
+    "date": "2006-01-01",
+    "population": 2324.9
+  },
+  {
+    "state": "Sarawak",
+    "date": "2007-01-01",
+    "population": 2366.1
+  },
+  {
+    "state": "Sarawak",
+    "date": "2008-01-01",
+    "population": 2408.4
+  },
+  {
+    "state": "Sarawak",
+    "date": "2009-01-01",
+    "population": 2450.8
+  },
+  {
+    "state": "Sarawak",
+    "date": "2010-01-01",
+    "population": 2487.1
+  },
+  {
+    "state": "Sarawak",
+    "date": "2011-01-01",
+    "population": 2527.9
+  },
+  {
+    "state": "Sarawak",
+    "date": "2012-01-01",
+    "population": 2569.7
+  },
+  {
+    "state": "Sarawak",
+    "date": "2013-01-01",
+    "population": 2642.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "2014-01-01",
+    "population": 2664.0
+  },
+  {
+    "state": "Sarawak",
+    "date": "2015-01-01",
+    "population": 2701.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "2016-01-01",
+    "population": 2738.7
+  },
+  {
+    "state": "Sarawak",
+    "date": "2017-01-01",
+    "population": 2766.3
+  },
+  {
+    "state": "Sarawak",
+    "date": "2018-01-01",
+    "population": 2791.7
+  },
+  {
+    "state": "Sarawak",
+    "date": "2019-01-01",
+    "population": 2806.0
+  },
+  {
+    "state": "Sarawak",
+    "date": "2020-01-01",
+    "population": 2453.7
+  },
+  {
+    "state": "Sarawak",
+    "date": "2021-01-01",
+    "population": 2465.6
+  },
+  {
+    "state": "Sarawak",
+    "date": "2022-01-01",
+    "population": 2473.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "2023-01-01",
+    "population": 2502.3
+  },
+  {
+    "state": "Sarawak",
+    "date": "2024-01-01",
+    "population": 2517.5
+  },
+  {
+    "state": "Sarawak",
+    "date": "2025-01-01",
+    "population": 2528.9
+  },
+  {
+    "state": "Sarawak",
+    "date": "2026-01-01",
+    "population": 2539.8
+  },
+  {
+    "state": "Selangor",
+    "date": "1970-01-01",
+    "population": 1696.4
+  },
+  {
+    "state": "Selangor",
+    "date": "1971-01-01",
+    "population": 1770.9
+  },
+  {
+    "state": "Selangor",
+    "date": "1972-01-01",
+    "population": 1846.7
+  },
+  {
+    "state": "Selangor",
+    "date": "1973-01-01",
+    "population": 1922.4
+  },
+  {
+    "state": "Selangor",
+    "date": "1974-01-01",
+    "population": 1997.9
+  },
+  {
+    "state": "Selangor",
+    "date": "1975-01-01",
+    "population": 2075.3
+  },
+  {
+    "state": "Selangor",
+    "date": "1976-01-01",
+    "population": 2154.3
+  },
+  {
+    "state": "Selangor",
+    "date": "1977-01-01",
+    "population": 2237.7
+  },
+  {
+    "state": "Selangor",
+    "date": "1978-01-01",
+    "population": 2320.9
+  },
+  {
+    "state": "Selangor",
+    "date": "1979-01-01",
+    "population": 2407.3
+  },
+  {
+    "state": "Selangor",
+    "date": "1980-01-01",
+    "population": 1524.1
+  },
+  {
+    "state": "Selangor",
+    "date": "1981-01-01",
+    "population": 1594.6
+  },
+  {
+    "state": "Selangor",
+    "date": "1982-01-01",
+    "population": 1668.3
+  },
+  {
+    "state": "Selangor",
+    "date": "1983-01-01",
+    "population": 1743.8
+  },
+  {
+    "state": "Selangor",
+    "date": "1984-01-01",
+    "population": 1822.0
+  },
+  {
+    "state": "Selangor",
+    "date": "1985-01-01",
+    "population": 1906.1
+  },
+  {
+    "state": "Selangor",
+    "date": "1986-01-01",
+    "population": 1992.6
+  },
+  {
+    "state": "Selangor",
+    "date": "1987-01-01",
+    "population": 2079.7
+  },
+  {
+    "state": "Selangor",
+    "date": "1988-01-01",
+    "population": 2166.9
+  },
+  {
+    "state": "Selangor",
+    "date": "1989-01-01",
+    "population": 2254.9
+  },
+  {
+    "state": "Selangor",
+    "date": "1990-01-01",
+    "population": 2345.4
+  },
+  {
+    "state": "Selangor",
+    "date": "1991-01-01",
+    "population": 2431.2
+  },
+  {
+    "state": "Selangor",
+    "date": "1992-01-01",
+    "population": 2605.6
+  },
+  {
+    "state": "Selangor",
+    "date": "1993-01-01",
+    "population": 2788.7
+  },
+  {
+    "state": "Selangor",
+    "date": "1994-01-01",
+    "population": 2978.5
+  },
+  {
+    "state": "Selangor",
+    "date": "1995-01-01",
+    "population": 3173.2
+  },
+  {
+    "state": "Selangor",
+    "date": "1996-01-01",
+    "population": 3371.1
+  },
+  {
+    "state": "Selangor",
+    "date": "1997-01-01",
+    "population": 3571.9
+  },
+  {
+    "state": "Selangor",
+    "date": "1998-01-01",
+    "population": 3777.5
+  },
+  {
+    "state": "Selangor",
+    "date": "1999-01-01",
+    "population": 3981.9
+  },
+  {
+    "state": "Selangor",
+    "date": "2000-01-01",
+    "population": 4188.9
+  },
+  {
+    "state": "Selangor",
+    "date": "2001-01-01",
+    "population": 4317.5
+  },
+  {
+    "state": "Selangor",
+    "date": "2002-01-01",
+    "population": 4446.3
+  },
+  {
+    "state": "Selangor",
+    "date": "2003-01-01",
+    "population": 4577.3
+  },
+  {
+    "state": "Selangor",
+    "date": "2004-01-01",
+    "population": 4712.8
+  },
+  {
+    "state": "Selangor",
+    "date": "2005-01-01",
+    "population": 4849.6
+  },
+  {
+    "state": "Selangor",
+    "date": "2006-01-01",
+    "population": 4986.2
+  },
+  {
+    "state": "Selangor",
+    "date": "2007-01-01",
+    "population": 5127.1
+  },
+  {
+    "state": "Selangor",
+    "date": "2008-01-01",
+    "population": 5268.5
+  },
+  {
+    "state": "Selangor",
+    "date": "2009-01-01",
+    "population": 5417.8
+  },
+  {
+    "state": "Selangor",
+    "date": "2010-01-01",
+    "population": 5502.1
+  },
+  {
+    "state": "Selangor",
+    "date": "2011-01-01",
+    "population": 5600.3
+  },
+  {
+    "state": "Selangor",
+    "date": "2012-01-01",
+    "population": 5702.4
+  },
+  {
+    "state": "Selangor",
+    "date": "2013-01-01",
+    "population": 5904.7
+  },
+  {
+    "state": "Selangor",
+    "date": "2014-01-01",
+    "population": 6051.3
+  },
+  {
+    "state": "Selangor",
+    "date": "2015-01-01",
+    "population": 6178.0
+  },
+  {
+    "state": "Selangor",
+    "date": "2016-01-01",
+    "population": 6291.5
+  },
+  {
+    "state": "Selangor",
+    "date": "2017-01-01",
+    "population": 6380.7
+  },
+  {
+    "state": "Selangor",
+    "date": "2018-01-01",
+    "population": 6475.0
+  },
+  {
+    "state": "Selangor",
+    "date": "2019-01-01",
+    "population": 6506.1
+  },
+  {
+    "state": "Selangor",
+    "date": "2020-01-01",
+    "population": 6994.4
+  },
+  {
+    "state": "Selangor",
+    "date": "2021-01-01",
+    "population": 7014.7
+  },
+  {
+    "state": "Selangor",
+    "date": "2022-01-01",
+    "population": 7050.3
+  },
+  {
+    "state": "Selangor",
+    "date": "2023-01-01",
+    "population": 7209.7
+  },
+  {
+    "state": "Selangor",
+    "date": "2024-01-01",
+    "population": 7362.7
+  },
+  {
+    "state": "Selangor",
+    "date": "2025-01-01",
+    "population": 7408.7
+  },
+  {
+    "state": "Selangor",
+    "date": "2026-01-01",
+    "population": 7454.2
+  },
+  {
+    "state": "Terengganu",
+    "date": "1970-01-01",
+    "population": 418.8
+  },
+  {
+    "state": "Terengganu",
+    "date": "1971-01-01",
+    "population": 429.0
+  },
+  {
+    "state": "Terengganu",
+    "date": "1972-01-01",
+    "population": 439.5
+  },
+  {
+    "state": "Terengganu",
+    "date": "1973-01-01",
+    "population": 451.0
+  },
+  {
+    "state": "Terengganu",
+    "date": "1974-01-01",
+    "population": 462.0
+  },
+  {
+    "state": "Terengganu",
+    "date": "1975-01-01",
+    "population": 474.9
+  },
+  {
+    "state": "Terengganu",
+    "date": "1976-01-01",
+    "population": 486.9
+  },
+  {
+    "state": "Terengganu",
+    "date": "1977-01-01",
+    "population": 500.9
+  },
+  {
+    "state": "Terengganu",
+    "date": "1978-01-01",
+    "population": 513.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "1979-01-01",
+    "population": 527.0
+  },
+  {
+    "state": "Terengganu",
+    "date": "1980-01-01",
+    "population": 541.7
+  },
+  {
+    "state": "Terengganu",
+    "date": "1981-01-01",
+    "population": 560.8
+  },
+  {
+    "state": "Terengganu",
+    "date": "1982-01-01",
+    "population": 581.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "1983-01-01",
+    "population": 602.9
+  },
+  {
+    "state": "Terengganu",
+    "date": "1984-01-01",
+    "population": 625.8
+  },
+  {
+    "state": "Terengganu",
+    "date": "1985-01-01",
+    "population": 651.6
+  },
+  {
+    "state": "Terengganu",
+    "date": "1986-01-01",
+    "population": 678.3
+  },
+  {
+    "state": "Terengganu",
+    "date": "1987-01-01",
+    "population": 704.3
+  },
+  {
+    "state": "Terengganu",
+    "date": "1988-01-01",
+    "population": 730.9
+  },
+  {
+    "state": "Terengganu",
+    "date": "1989-01-01",
+    "population": 757.3
+  },
+  {
+    "state": "Terengganu",
+    "date": "1990-01-01",
+    "population": 784.6
+  },
+  {
+    "state": "Terengganu",
+    "date": "1991-01-01",
+    "population": 810.7
+  },
+  {
+    "state": "Terengganu",
+    "date": "1992-01-01",
+    "population": 823.8
+  },
+  {
+    "state": "Terengganu",
+    "date": "1993-01-01",
+    "population": 836.5
+  },
+  {
+    "state": "Terengganu",
+    "date": "1994-01-01",
+    "population": 848.6
+  },
+  {
+    "state": "Terengganu",
+    "date": "1995-01-01",
+    "population": 860.0
+  },
+  {
+    "state": "Terengganu",
+    "date": "1996-01-01",
+    "population": 870.7
+  },
+  {
+    "state": "Terengganu",
+    "date": "1997-01-01",
+    "population": 880.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "1998-01-01",
+    "population": 889.6
+  },
+  {
+    "state": "Terengganu",
+    "date": "1999-01-01",
+    "population": 896.6
+  },
+  {
+    "state": "Terengganu",
+    "date": "2000-01-01",
+    "population": 902.6
+  },
+  {
+    "state": "Terengganu",
+    "date": "2001-01-01",
+    "population": 920.0
+  },
+  {
+    "state": "Terengganu",
+    "date": "2002-01-01",
+    "population": 936.6
+  },
+  {
+    "state": "Terengganu",
+    "date": "2003-01-01",
+    "population": 951.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "2004-01-01",
+    "population": 966.6
+  },
+  {
+    "state": "Terengganu",
+    "date": "2005-01-01",
+    "population": 981.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "2006-01-01",
+    "population": 995.9
+  },
+  {
+    "state": "Terengganu",
+    "date": "2007-01-01",
+    "population": 1010.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "2008-01-01",
+    "population": 1025.2
+  },
+  {
+    "state": "Terengganu",
+    "date": "2009-01-01",
+    "population": 1040.7
+  },
+  {
+    "state": "Terengganu",
+    "date": "2010-01-01",
+    "population": 1055.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "2011-01-01",
+    "population": 1079.0
+  },
+  {
+    "state": "Terengganu",
+    "date": "2012-01-01",
+    "population": 1094.1
+  },
+  {
+    "state": "Terengganu",
+    "date": "2013-01-01",
+    "population": 1113.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "2014-01-01",
+    "population": 1140.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "2015-01-01",
+    "population": 1161.0
+  },
+  {
+    "state": "Terengganu",
+    "date": "2016-01-01",
+    "population": 1183.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "2017-01-01",
+    "population": 1208.0
+  },
+  {
+    "state": "Terengganu",
+    "date": "2018-01-01",
+    "population": 1228.3
+  },
+  {
+    "state": "Terengganu",
+    "date": "2019-01-01",
+    "population": 1244.5
+  },
+  {
+    "state": "Terengganu",
+    "date": "2020-01-01",
+    "population": 1149.4
+  },
+  {
+    "state": "Terengganu",
+    "date": "2021-01-01",
+    "population": 1170.7
+  },
+  {
+    "state": "Terengganu",
+    "date": "2022-01-01",
+    "population": 1186.6
+  },
+  {
+    "state": "Terengganu",
+    "date": "2023-01-01",
+    "population": 1210.0
+  },
+  {
+    "state": "Terengganu",
+    "date": "2024-01-01",
+    "population": 1231.5
+  },
+  {
+    "state": "Terengganu",
+    "date": "2025-01-01",
+    "population": 1245.8
+  },
+  {
+    "state": "Terengganu",
+    "date": "2026-01-01",
+    "population": 1260.9
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1980-01-01",
+    "population": 982.9
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1981-01-01",
+    "population": 1006.1
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1982-01-01",
+    "population": 1028.5
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1983-01-01",
+    "population": 1050.7
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1984-01-01",
+    "population": 1072.2
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1985-01-01",
+    "population": 1095.9
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1986-01-01",
+    "population": 1120.5
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1987-01-01",
+    "population": 1144.9
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1988-01-01",
+    "population": 1169.6
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1989-01-01",
+    "population": 1194.1
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1990-01-01",
+    "population": 1217.8
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1991-01-01",
+    "population": 1262.1
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1992-01-01",
+    "population": 1281.5
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1993-01-01",
+    "population": 1298.7
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1994-01-01",
+    "population": 1314.4
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1995-01-01",
+    "population": 1328.9
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1996-01-01",
+    "population": 1342.5
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1997-01-01",
+    "population": 1356.4
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1998-01-01",
+    "population": 1373.0
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "1999-01-01",
+    "population": 1394.0
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2000-01-01",
+    "population": 1416.0
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2001-01-01",
+    "population": 1446.2
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2002-01-01",
+    "population": 1474.1
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2003-01-01",
+    "population": 1500.5
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2004-01-01",
+    "population": 1526.4
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2005-01-01",
+    "population": 1551.8
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2006-01-01",
+    "population": 1577.5
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2007-01-01",
+    "population": 1603.3
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2008-01-01",
+    "population": 1628.9
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2009-01-01",
+    "population": 1652.8
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2010-01-01",
+    "population": 1674.8
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2011-01-01",
+    "population": 1693.0
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2012-01-01",
+    "population": 1702.1
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2013-01-01",
+    "population": 1723.4
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2014-01-01",
+    "population": 1737.4
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2015-01-01",
+    "population": 1780.4
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2016-01-01",
+    "population": 1789.7
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2017-01-01",
+    "population": 1793.2
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2018-01-01",
+    "population": 1790.0
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2019-01-01",
+    "population": 1782.5
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2020-01-01",
+    "population": 1982.1
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2021-01-01",
+    "population": 1964.0
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2022-01-01",
+    "population": 1961.2
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2023-01-01",
+    "population": 2005.7
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2024-01-01",
+    "population": 2067.5
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2025-01-01",
+    "population": 2075.2
+  },
+  {
+    "state": "W.P. Kuala Lumpur",
+    "date": "2026-01-01",
+    "population": 2082.3
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "1991-01-01",
+    "population": 52.9
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "1992-01-01",
+    "population": 55.4
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "1993-01-01",
+    "population": 57.9
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "1994-01-01",
+    "population": 60.3
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "1995-01-01",
+    "population": 62.7
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "1996-01-01",
+    "population": 65.1
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "1997-01-01",
+    "population": 67.7
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "1998-01-01",
+    "population": 70.5
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "1999-01-01",
+    "population": 73.3
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2000-01-01",
+    "population": 76.1
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2001-01-01",
+    "population": 77.0
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2002-01-01",
+    "population": 77.8
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2003-01-01",
+    "population": 78.7
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2004-01-01",
+    "population": 79.7
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2005-01-01",
+    "population": 80.8
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2006-01-01",
+    "population": 82.0
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2007-01-01",
+    "population": 83.2
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2008-01-01",
+    "population": 84.6
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2009-01-01",
+    "population": 86.3
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2010-01-01",
+    "population": 88.2
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2011-01-01",
+    "population": 89.4
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2012-01-01",
+    "population": 90.5
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2013-01-01",
+    "population": 91.4
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2014-01-01",
+    "population": 93.8
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2015-01-01",
+    "population": 95.1
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2016-01-01",
+    "population": 96.8
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2017-01-01",
+    "population": 97.6
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2018-01-01",
+    "population": 99.0
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2019-01-01",
+    "population": 99.3
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2020-01-01",
+    "population": 95.1
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2021-01-01",
+    "population": 96.0
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2022-01-01",
+    "population": 96.9
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2023-01-01",
+    "population": 99.0
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2024-01-01",
+    "population": 100.8
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2025-01-01",
+    "population": 100.9
+  },
+  {
+    "state": "W.P. Labuan",
+    "date": "2026-01-01",
+    "population": 101.1
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2010-01-01",
+    "population": 73.4
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2011-01-01",
+    "population": 77.5
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2012-01-01",
+    "population": 78.3
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2013-01-01",
+    "population": 79.7
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2014-01-01",
+    "population": 80.9
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2015-01-01",
+    "population": 83.0
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2016-01-01",
+    "population": 84.4
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2017-01-01",
+    "population": 87.5
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2018-01-01",
+    "population": 97.2
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2019-01-01",
+    "population": 103.7
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2020-01-01",
+    "population": 109.2
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2021-01-01",
+    "population": 115.2
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2022-01-01",
+    "population": 117.0
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2023-01-01",
+    "population": 118.8
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2024-01-01",
+    "population": 120.3
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2025-01-01",
+    "population": 120.7
+  },
+  {
+    "state": "W.P. Putrajaya",
+    "date": "2026-01-01",
+    "population": 121.4
+  }
+]
