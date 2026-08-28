@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+
 import 'malaysia_map_page.dart';
 import '../models/state_population_data.dart';
+import '../models/intelligence_report.dart';
 import '../services/api_service.dart';
+import '../services/intelligence_reports_service.dart';
+import 'state_comparison_page.dart';
+import 'saved_intelligence_reports_page.dart';
 
 class IntelligencePage extends StatefulWidget {
   const IntelligencePage({super.key});
@@ -12,6 +17,12 @@ class IntelligencePage extends StatefulWidget {
 
 class _IntelligencePageState extends State<IntelligencePage> {
   final ApiService _apiService = ApiService();
+
+  final IntelligenceReportsService _reportsService =
+  IntelligenceReportsService();
+
+  final ScrollController _scrollController =
+  ScrollController();
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -27,29 +38,42 @@ class _IntelligencePageState extends State<IntelligencePage> {
     _loadStateData();
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   // ============================================================
   // LOAD STATE POPULATION DATA
   // ============================================================
 
   Future<void> _loadStateData() async {
     try {
-      final data = await _apiService.getStatePopulation();
+      final data =
+      await _apiService.getStatePopulation();
 
-      // Find the latest available population record for each state.
-      final Map<String, StatePopulationData> latestByState = {};
+      final Map<String, StatePopulationData>
+      latestByState = {};
 
       for (final record in data) {
-        final current = latestByState[record.state];
+        final current =
+        latestByState[record.state];
 
-        if (current == null || record.date.isAfter(current.date)) {
-          latestByState[record.state] = record;
+        if (current == null ||
+            record.date.isAfter(current.date)) {
+          latestByState[record.state] =
+              record;
         }
       }
 
-      // Rank states by latest population.
-      final latestStates = latestByState.values.toList()
+      final latestStates =
+      latestByState.values.toList()
         ..sort(
-              (a, b) => b.population.compareTo(a.population),
+              (a, b) =>
+              b.population.compareTo(
+                a.population,
+              ),
         );
 
       if (!mounted) return;
@@ -59,7 +83,8 @@ class _IntelligencePageState extends State<IntelligencePage> {
         _latestStates = latestStates;
 
         if (latestStates.isNotEmpty) {
-          _selectedState = latestStates.first.state;
+          _selectedState =
+              latestStates.first.state;
         }
 
         _isLoading = false;
@@ -75,13 +100,17 @@ class _IntelligencePageState extends State<IntelligencePage> {
   }
 
   // ============================================================
-  // GET LATEST RECORD FOR A STATE
+  // GET LATEST RECORD
   // ============================================================
 
-  StatePopulationData? _getLatestRecord(String state) {
-    final records = _allPopulationData
+  StatePopulationData? _getLatestRecord(
+      String state,
+      ) {
+    final records =
+    _allPopulationData
         .where(
-          (record) => record.state == state,
+          (record) =>
+      record.state == state,
     )
         .toList();
 
@@ -90,31 +119,31 @@ class _IntelligencePageState extends State<IntelligencePage> {
     }
 
     records.sort(
-          (a, b) => b.date.compareTo(a.date),
+          (a, b) =>
+          b.date.compareTo(a.date),
     );
 
     return records.first;
   }
 
   // ============================================================
-  // GET PREVIOUS CALENDAR YEAR
-  // Example:
-  // Latest = 2026
-  // This method specifically searches for 2025.
-  //
-  // It will NOT silently compare 2026 with 2024/2023/etc.
+  // PREVIOUS CALENDAR YEAR
   // ============================================================
 
-  StatePopulationData? _getPreviousYearRecord(
+  StatePopulationData?
+  _getPreviousYearRecord(
       String state,
       StatePopulationData latest,
       ) {
-    final previousYear = latest.date.year - 1;
+    final previousYear =
+        latest.date.year - 1;
 
-    final records = _allPopulationData.where(
+    final records =
+    _allPopulationData.where(
           (record) =>
       record.state == state &&
-          record.date.year == previousYear,
+          record.date.year ==
+              previousYear,
     );
 
     if (records.isEmpty) {
@@ -125,12 +154,16 @@ class _IntelligencePageState extends State<IntelligencePage> {
   }
 
   // ============================================================
-  // GET STATE RANKING
+  // STATE RANKING
   // ============================================================
 
-  int _getStateRanking(String state) {
-    final index = _latestStates.indexWhere(
-          (record) => record.state == state,
+  int _getStateRanking(
+      String state,
+      ) {
+    final index =
+    _latestStates.indexWhere(
+          (record) =>
+      record.state == state,
     );
 
     if (index == -1) {
@@ -142,13 +175,11 @@ class _IntelligencePageState extends State<IntelligencePage> {
 
   // ============================================================
   // FORMAT POPULATION
-  //
-  // Dataset population is stored in thousands.
-  // Example:
-  // 7450 -> 7.45M
   // ============================================================
 
-  String _formatPopulation(double population) {
+  String _formatPopulation(
+      double population,
+      ) {
     if (population >= 1000) {
       return '${(population / 1000).toStringAsFixed(2)}M';
     }
@@ -157,51 +188,143 @@ class _IntelligencePageState extends State<IntelligencePage> {
   }
 
   // ============================================================
-  // CALCULATE YEAR-TO-YEAR POPULATION GROWTH
+  // CALCULATE GROWTH
   // ============================================================
 
   double? _calculateGrowth(
       StatePopulationData latest,
       StatePopulationData? previous,
       ) {
-    if (previous == null || previous.population == 0) {
+    if (previous == null ||
+        previous.population == 0) {
       return null;
     }
 
-    return ((latest.population - previous.population) /
+    return ((latest.population -
+        previous.population) /
         previous.population) *
         100;
   }
 
   // ============================================================
-  // GENERATE STATE GROWTH INSIGHT
+  // SAVE REPORT
+  // ============================================================
+
+  Future<void>
+  _saveStateInsightReport({
+    required String state,
+    required String insight,
+  }) async {
+    final now = DateTime.now();
+
+    final report =
+    IntelligenceReport(
+      id: now.microsecondsSinceEpoch
+          .toString(),
+      title: '$state Growth Insight',
+      stateA: state,
+      stateB: null,
+      reportType: 'State Insight',
+      insight: insight,
+      note: '',
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await _reportsService.create(
+      report,
+    );
+
+    if (!mounted) return;
+
+    Navigator.pop(context);
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(
+        content: Text(
+          '$state intelligence report saved successfully.',
+        ),
+        action: SnackBarAction(
+          label: 'VIEW',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                const SavedIntelligenceReportsPage(),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // SELECT STATE FROM RANKING
+  // ============================================================
+
+  void _selectStateFromRanking(
+      String state,
+      ) {
+    setState(() {
+      _selectedState = state;
+    });
+
+    Future.delayed(
+      const Duration(
+        milliseconds: 100,
+      ),
+          () {
+        if (_scrollController
+            .hasClients) {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(
+              milliseconds: 500,
+            ),
+            curve:
+            Curves.easeInOut,
+          );
+        }
+      },
+    );
+  }
+
+  // ============================================================
+  // SHOW STATE INSIGHT
   // ============================================================
 
   void _showStateInsight() {
-    final state = _selectedState;
+    final state =
+        _selectedState;
 
     if (state == null) {
       return;
     }
 
-    final latest = _getLatestRecord(state);
+    final latest =
+    _getLatestRecord(state);
 
     if (latest == null) {
       return;
     }
 
-    // Specifically look for the previous calendar year.
-    final previous = _getPreviousYearRecord(
+    final previous =
+    _getPreviousYearRecord(
       state,
       latest,
     );
 
-    final growth = _calculateGrowth(
+    final growth =
+    _calculateGrowth(
       latest,
       previous,
     );
 
-    final ranking = _getStateRanking(state);
+    final ranking =
+    _getStateRanking(state);
 
     String growthMessage;
 
@@ -233,90 +356,135 @@ class _IntelligencePageState extends State<IntelligencePage> {
       isScrollControlled: true,
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.fromLTRB(
+          padding:
+          const EdgeInsets.fromLTRB(
             24,
             8,
             24,
             32,
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize:
+            MainAxisSize.min,
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
             children: [
               Text(
                 '$state Growth Insight',
-                style: const TextStyle(
+                style:
+                const TextStyle(
                   fontSize: 21,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                  FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(
+                height: 20,
+              ),
 
               _InsightRow(
-                label: 'Latest Population',
-                value: _formatPopulation(
+                label:
+                'Latest Population',
+                value:
+                _formatPopulation(
                   latest.population,
                 ),
               ),
 
               _InsightRow(
-                label: 'Latest Year',
-                value: latest.date.year.toString(),
+                label:
+                'Latest Year',
+                value:
+                latest.date.year
+                    .toString(),
               ),
 
               _InsightRow(
-                label: 'Compared With',
-                value: previous == null
+                label:
+                'Compared With',
+                value:
+                previous == null
                     ? '${latest.date.year - 1} unavailable'
-                    : previous.date.year.toString(),
+                    : previous
+                    .date.year
+                    .toString(),
               ),
 
               _InsightRow(
-                label: 'Malaysia Ranking',
-                value: ranking == 0
+                label:
+                'Malaysia Ranking',
+                value:
+                ranking == 0
                     ? 'N/A'
                     : '#$ranking',
               ),
 
               _InsightRow(
                 label: 'Growth',
-                value: growth == null
+                value:
+                growth == null
                     ? 'N/A'
                     : '${growth >= 0 ? '+' : ''}'
                     '${growth.toStringAsFixed(2)}%',
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(
+                height: 18,
+              ),
 
               Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E5A78)
-                      .withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(16),
+                width:
+                double.infinity,
+                padding:
+                const EdgeInsets.all(
+                  16,
+                ),
+                decoration:
+                BoxDecoration(
+                  color:
+                  const Color(
+                    0xFF1E5A78,
+                  ).withValues(
+                    alpha: 0.08,
+                  ),
+                  borderRadius:
+                  BorderRadius.circular(
+                    16,
+                  ),
                 ),
                 child: Text(
                   growthMessage,
-                  style: const TextStyle(
+                  style:
+                  const TextStyle(
                     height: 1.5,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(
+                height: 18,
+              ),
 
               SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    // CRUD will be connected later.
+                width:
+                double.infinity,
+                child:
+                FilledButton.icon(
+                  onPressed: () async {
+                    await _saveStateInsightReport(
+                      state: state,
+                      insight:
+                      growthMessage,
+                    );
                   },
-                  icon: const Icon(
-                    Icons.bookmark_add_outlined,
+                  icon:
+                  const Icon(
+                    Icons
+                        .bookmark_add_outlined,
                   ),
-                  label: const Text(
+                  label:
+                  const Text(
                     'Save Intelligence Report',
                   ),
                 ),
@@ -333,54 +501,75 @@ class _IntelligencePageState extends State<IntelligencePage> {
   // ============================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(),
+        child:
+        CircularProgressIndicator(),
       );
     }
 
     if (_errorMessage != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding:
+          const EdgeInsets.all(
+            24,
+          ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize:
+            MainAxisSize.min,
             children: [
               const Icon(
                 Icons.error_outline,
                 size: 50,
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(
+                height: 12,
+              ),
 
               const Text(
                 'Unable to load intelligence data',
-                style: TextStyle(
+                style:
+                TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight:
+                  FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(
+                height: 8,
+              ),
 
               Text(
                 _errorMessage!,
-                textAlign: TextAlign.center,
+                textAlign:
+                TextAlign.center,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(
+                height: 16,
+              ),
 
               FilledButton(
                 onPressed: () {
                   setState(() {
-                    _isLoading = true;
-                    _errorMessage = null;
+                    _isLoading =
+                    true;
+                    _errorMessage =
+                    null;
                   });
 
                   _loadStateData();
                 },
-                child: const Text('Retry'),
+                child:
+                const Text(
+                  'Retry',
+                ),
               ),
             ],
           ),
@@ -389,9 +578,13 @@ class _IntelligencePageState extends State<IntelligencePage> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadStateData,
+      onRefresh:
+      _loadStateData,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(
+        controller:
+        _scrollController,
+        padding:
+        const EdgeInsets.fromLTRB(
           20,
           10,
           20,
@@ -400,179 +593,256 @@ class _IntelligencePageState extends State<IntelligencePage> {
         children: [
           const Text(
             'Malaysia Digital Intelligence',
-            style: TextStyle(
+            style:
+            TextStyle(
               fontSize: 24,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+              FontWeight.bold,
             ),
           ),
 
-          const SizedBox(height: 6),
+          const SizedBox(
+            height: 6,
+          ),
 
           Text(
             'Explore, analyse and compare development '
                 'indicators across Malaysian states.',
-            style: TextStyle(
+            style:
+            TextStyle(
               fontSize: 14,
               height: 1.5,
-              color: Colors.grey.shade600,
+              color:
+              Colors.grey.shade600,
             ),
           ),
 
-          const SizedBox(height: 24),
-
-          // ====================================================
-          // STATE INTELLIGENCE
-          // ====================================================
+          const SizedBox(
+            height: 24,
+          ),
 
           const Text(
             'State Intelligence',
-            style: TextStyle(
+            style:
+            TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+              FontWeight.bold,
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(
+            height: 12,
+          ),
 
-          DropdownButtonFormField<String>(
-            initialValue: _selectedState,
-            decoration: InputDecoration(
-              labelText: 'Select State',
-              prefixIcon: const Icon(
-                Icons.location_on_outlined,
+          DropdownButtonFormField<
+              String>(
+            initialValue:
+            _selectedState,
+            decoration:
+            InputDecoration(
+              labelText:
+              'Select State',
+              prefixIcon:
+              const Icon(
+                Icons
+                    .location_on_outlined,
               ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+              border:
+              OutlineInputBorder(
+                borderRadius:
+                BorderRadius.circular(
+                  16,
+                ),
               ),
             ),
-            items: _latestStates
+            items:
+            _latestStates
                 .map(
-                  (state) => DropdownMenuItem(
-                value: state.state,
-                child: Text(state.state),
-              ),
+                  (state) =>
+                  DropdownMenuItem(
+                    value:
+                    state.state,
+                    child:
+                    Text(
+                      state.state,
+                    ),
+                  ),
             )
                 .toList(),
             onChanged: (value) {
               setState(() {
-                _selectedState = value;
+                _selectedState =
+                    value;
               });
             },
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(
+            height: 16,
+          ),
 
-          if (_selectedState != null)
+          if (_selectedState !=
+              null)
             _StateOverviewCard(
-              state: _getLatestRecord(
+              state:
+              _getLatestRecord(
                 _selectedState!,
               )!,
-              ranking: _getStateRanking(
+              ranking:
+              _getStateRanking(
                 _selectedState!,
               ),
-              formatPopulation: _formatPopulation,
+              formatPopulation:
+              _formatPopulation,
             ),
 
-          const SizedBox(height: 14),
+          const SizedBox(
+            height: 14,
+          ),
 
           SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _showStateInsight,
-              icon: const Icon(
+            width:
+            double.infinity,
+            child:
+            FilledButton.icon(
+              onPressed:
+              _showStateInsight,
+              icon:
+              const Icon(
                 Icons.auto_graph,
               ),
-              label: const Text(
+              label:
+              const Text(
                 'Generate State Growth Insight',
               ),
             ),
           ),
 
-          const SizedBox(height: 30),
-
-          // ====================================================
-          // EXPLORE INTELLIGENCE
-          // ====================================================
+          const SizedBox(
+            height: 30,
+          ),
 
           const Text(
             'Explore Intelligence',
-            style: TextStyle(
+            style:
+            TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+              FontWeight.bold,
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(
+            height: 12,
+          ),
 
           Row(
             children: [
               Expanded(
-                child: _FeatureCard(
-                  icon: Icons.map_outlined,
-                  title: 'Malaysia Map',
-                  subtitle: 'Explore states visually',
+                child:
+                _FeatureCard(
+                  icon:
+                  Icons.map_outlined,
+                  title:
+                  'Malaysia Map',
+                  subtitle:
+                  'Explore states visually',
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const MalaysiaMapPage(),
+                        builder:
+                            (context) =>
+                        const MalaysiaMapPage(),
                       ),
                     );
                   },
                 ),
               ),
 
-              const SizedBox(width: 12),
+              const SizedBox(
+                width: 12,
+              ),
 
               Expanded(
-                child: _FeatureCard(
-                  icon: Icons.compare_arrows,
-                  title: 'Compare States',
-                  subtitle: 'Compare two states',
+                child:
+                _FeatureCard(
+                  icon: Icons
+                      .compare_arrows_rounded,
+                  title:
+                  'Compare States',
+                  subtitle:
+                  'Compare two states',
                   onTap: () {
-                    // State Comparison will be connected later.
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                        const StateComparisonPage(),
+                      ),
+                    );
                   },
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(
+            height: 12,
+          ),
 
           _FeatureCard(
-            icon: Icons.bookmarks_outlined,
-            title: 'Saved Intelligence Reports',
-            subtitle: 'View and manage saved insights',
+            icon: Icons
+                .bookmark_outline_rounded,
+            title:
+            'Saved Intelligence Reports',
+            subtitle:
+            'View your saved reports',
             onTap: () {
-              // CRUD screen will be connected later.
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) =>
+                  const SavedIntelligenceReportsPage(),
+                ),
+              );
             },
           ),
 
-          const SizedBox(height: 30),
-
-          // ====================================================
-          // POPULATION RANKING
-          // ====================================================
+          const SizedBox(
+            height: 30,
+          ),
 
           const Text(
             'Population Ranking',
-            style: TextStyle(
+            style:
+            TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+              FontWeight.bold,
             ),
           ),
 
-          const SizedBox(height: 6),
+          const SizedBox(
+            height: 6,
+          ),
 
           Text(
             'Latest available state population data',
-            style: TextStyle(
-              color: Colors.grey.shade600,
+            style:
+            TextStyle(
+              color:
+              Colors.grey.shade600,
               fontSize: 13,
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(
+            height: 12,
+          ),
 
           ..._latestStates
               .take(5)
@@ -581,15 +851,26 @@ class _IntelligencePageState extends State<IntelligencePage> {
               .entries
               .map(
                 (entry) {
-              final ranking = entry.key + 1;
-              final state = entry.value;
+              final ranking =
+                  entry.key + 1;
+
+              final state =
+                  entry.value;
 
               return _RankingTile(
-                ranking: ranking,
-                state: state.state,
-                population: _formatPopulation(
+                ranking:
+                ranking,
+                state:
+                state.state,
+                population:
+                _formatPopulation(
                   state.population,
                 ),
+                onTap: () {
+                  _selectStateFromRanking(
+                    state.state,
+                  );
+                },
               );
             },
           ),
@@ -599,15 +880,16 @@ class _IntelligencePageState extends State<IntelligencePage> {
   }
 }
 
-
 // ============================================================
 // STATE OVERVIEW CARD
 // ============================================================
 
-class _StateOverviewCard extends StatelessWidget {
+class _StateOverviewCard
+    extends StatelessWidget {
   final StatePopulationData state;
   final int ranking;
-  final String Function(double) formatPopulation;
+  final String Function(double)
+  formatPopulation;
 
   const _StateOverviewCard({
     required this.state,
@@ -616,54 +898,80 @@ class _StateOverviewCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
+      padding:
+      const EdgeInsets.all(
+        20,
+      ),
+      decoration:
+      BoxDecoration(
+        gradient:
+        const LinearGradient(
           colors: [
             Color(0xFF1E5A78),
             Color(0xFF4D8792),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+        BorderRadius.circular(
+          20,
+        ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
         children: [
           Text(
             state.state,
-            style: const TextStyle(
-              color: Colors.white,
+            style:
+            const TextStyle(
+              color:
+              Colors.white,
               fontSize: 21,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+              FontWeight.bold,
             ),
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(
+            height: 18,
+          ),
 
           Row(
             children: [
               Expanded(
-                child: _OverviewValue(
-                  label: 'Population',
-                  value: formatPopulation(
+                child:
+                _OverviewValue(
+                  label:
+                  'Population',
+                  value:
+                  formatPopulation(
                     state.population,
                   ),
                 ),
               ),
 
               Expanded(
-                child: _OverviewValue(
-                  label: 'Ranking',
-                  value: '#$ranking',
+                child:
+                _OverviewValue(
+                  label:
+                  'Ranking',
+                  value:
+                  '#$ranking',
                 ),
               ),
 
               Expanded(
-                child: _OverviewValue(
-                  label: 'Year',
-                  value: state.date.year.toString(),
+                child:
+                _OverviewValue(
+                  label:
+                  'Year',
+                  value:
+                  state.date.year
+                      .toString(),
                 ),
               ),
             ],
@@ -674,12 +982,12 @@ class _StateOverviewCard extends StatelessWidget {
   }
 }
 
-
 // ============================================================
 // OVERVIEW VALUE
 // ============================================================
 
-class _OverviewValue extends StatelessWidget {
+class _OverviewValue
+    extends StatelessWidget {
   final String label;
   final String value;
 
@@ -689,25 +997,34 @@ class _OverviewValue extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style:
+          const TextStyle(
             color: Colors.white,
             fontSize: 18,
-            fontWeight: FontWeight.bold,
+            fontWeight:
+            FontWeight.bold,
           ),
         ),
 
-        const SizedBox(height: 3),
+        const SizedBox(
+          height: 3,
+        ),
 
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white70,
+          style:
+          const TextStyle(
+            color:
+            Colors.white70,
             fontSize: 11,
           ),
         ),
@@ -716,12 +1033,12 @@ class _OverviewValue extends StatelessWidget {
   }
 }
 
-
 // ============================================================
 // FEATURE CARD
 // ============================================================
 
-class _FeatureCard extends StatelessWidget {
+class _FeatureCard
+    extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
@@ -735,56 +1052,95 @@ class _FeatureCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     return Material(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(18),
+      color: Theme.of(context)
+          .colorScheme
+          .surface,
+      borderRadius:
+      BorderRadius.circular(
+        18,
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius:
+        BorderRadius.circular(
+          18,
+        ),
         child: Container(
-          padding: const EdgeInsets.all(17),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Colors.grey.withValues(
+          padding:
+          const EdgeInsets.all(
+            17,
+          ),
+          decoration:
+          BoxDecoration(
+            borderRadius:
+            BorderRadius.circular(
+              18,
+            ),
+            border:
+            Border.all(
+              color: Colors.grey
+                  .withValues(
                 alpha: 0.15,
               ),
             ),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
             children: [
               Container(
                 width: 42,
                 height: 42,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E5A78)
-                      .withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(12),
+                decoration:
+                BoxDecoration(
+                  color:
+                  const Color(
+                    0xFF1E5A78,
+                  ).withValues(
+                    alpha: 0.10,
+                  ),
+                  borderRadius:
+                  BorderRadius.circular(
+                    12,
+                  ),
                 ),
                 child: Icon(
                   icon,
-                  color: const Color(0xFF1E5A78),
+                  color:
+                  const Color(
+                    0xFF1E5A78,
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(
+                height: 12,
+              ),
 
               Text(
                 title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+                style:
+                const TextStyle(
+                  fontWeight:
+                  FontWeight.bold,
                   fontSize: 14,
                 ),
               ),
 
-              const SizedBox(height: 4),
+              const SizedBox(
+                height: 4,
+              ),
 
               Text(
                 subtitle,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
+                style:
+                TextStyle(
+                  color: Colors
+                      .grey.shade600,
                   fontSize: 11,
                 ),
               ),
@@ -796,48 +1152,64 @@ class _FeatureCard extends StatelessWidget {
   }
 }
 
-
 // ============================================================
 // RANKING TILE
 // ============================================================
 
-class _RankingTile extends StatelessWidget {
+class _RankingTile
+    extends StatelessWidget {
   final int ranking;
   final String state;
   final String population;
+  final VoidCallback onTap;
 
   const _RankingTile({
     required this.ranking,
     required this.state,
     required this.population,
+    required this.onTap,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     return Card(
       elevation: 0,
-      margin: const EdgeInsets.only(
+      margin:
+      const EdgeInsets.only(
         bottom: 8,
       ),
       child: ListTile(
-        leading: CircleAvatar(
+        onTap: onTap,
+
+        leading:
+        CircleAvatar(
           child: Text(
             '$ranking',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
+            style:
+            const TextStyle(
+              fontWeight:
+              FontWeight.bold,
             ),
           ),
         ),
+
         title: Text(
           state,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
+          style:
+          const TextStyle(
+            fontWeight:
+            FontWeight.w600,
           ),
         ),
+
         subtitle: Text(
           'Population: $population',
         ),
-        trailing: const Icon(
+
+        trailing:
+        const Icon(
           Icons.chevron_right,
         ),
       ),
@@ -845,12 +1217,12 @@ class _RankingTile extends StatelessWidget {
   }
 }
 
-
 // ============================================================
 // INSIGHT ROW
 // ============================================================
 
-class _InsightRow extends StatelessWidget {
+class _InsightRow
+    extends StatelessWidget {
   final String label;
   final String value;
 
@@ -860,9 +1232,12 @@ class _InsightRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
+      padding:
+      const EdgeInsets.symmetric(
         vertical: 7,
       ),
       child: Row(
@@ -870,15 +1245,20 @@ class _InsightRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
-                color: Colors.grey.shade600,
+              style:
+              TextStyle(
+                color: Colors
+                    .grey.shade600,
               ),
             ),
           ),
+
           Text(
             value,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
+            style:
+            const TextStyle(
+              fontWeight:
+              FontWeight.bold,
             ),
           ),
         ],
