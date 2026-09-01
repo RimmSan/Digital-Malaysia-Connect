@@ -1,15 +1,16 @@
-import 'dart:async';
-import 'dart:math';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../models/domain_data.dart';
-import '../models/growth_target.dart';
+import '../models/growth_bookmark.dart';
 import '../services/api_service.dart';
-import '../services/growth_cache_service.dart';
-import '../services/growth_target_service.dart';
+import '../services/growth_bookmark_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/data_source_label.dart';
+import '../widgets/growth_bookmark_card.dart';
+import '../widgets/growth_hero_card.dart';
+import '../widgets/growth_stat_tile.dart';
+import '../widgets/growth_view_toggle.dart';
 
 class GrowthPage extends StatefulWidget {
   const GrowthPage({super.key});
@@ -20,103 +21,50 @@ class GrowthPage extends StatefulWidget {
 
 class _GrowthPageState extends State<GrowthPage> {
   final ApiService _apiService = ApiService();
-  final GrowthCacheService _cacheService = GrowthCacheService();
-  final GrowthTargetService _targetService = GrowthTargetService();
+  final GrowthBookmarkService _bookmarkService = GrowthBookmarkService();
 
   List<DomainData> _domainData = [];
-  List<GrowthTarget> _targets = [];
+  List<GrowthBookmark> _bookmarks = [];
 
-  DateTime? _lastUpdated;
-  bool _isOffline = false;
   bool _isLoading = true;
-  bool _demoMode = false;
-
-  // Demo-only simulated bump on top of real cumulative total,
-  // so Auto Refresh + Milestone Achieved can be shown live
-  // without waiting for data.gov.my to actually publish new data.
-  int _demoBump = 0;
-
-  Timer? _refreshTimer;
-  final _random = Random();
+  GrowthView _view = GrowthView.yearly;
+  String? _selectedBookmarkId;
 
   @override
   void initState() {
     super.initState();
-    _loadTargets();
-    _fetchData(showLoading: true);
-    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      _fetchData(showLoading: false);
-    });
-  }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
+    _loadData();
+    _loadBookmarks();
   }
 
   // ------------------------------------------------------------
-  // DATA FETCH (Automatic Refresh + Offline fallback)
+  // DATA
   // ------------------------------------------------------------
-  Future<void> _fetchData({required bool showLoading}) async {
-    if (showLoading) setState(() => _isLoading = true);
-
+  Future<void> _loadData() async {
     try {
       final data = await _apiService.getDomains();
-      await _cacheService.save(data);
-
       if (!mounted) return;
       setState(() {
         _domainData = data;
-        _lastUpdated = DateTime.now();
-        _isOffline = false;
         _isLoading = false;
-        if (_demoMode) {
-          _demoBump += 20000 + _random.nextInt(60000);
-        }
       });
-
-      if (mounted && !showLoading) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            duration: Duration(seconds: 2),
-            content: Text('🔄 Synced with data.gov.my'),
-          ),
-        );
-      }
     } catch (_) {
-      final cached = await _cacheService.load();
       if (!mounted) return;
-
-      if (cached != null) {
-        setState(() {
-          _domainData = cached.$1;
-          _lastUpdated = cached.$2;
-          _isOffline = true;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _isOffline = true;
-          _isLoading = false;
-        });
-      }
+      setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _loadTargets() async {
-    final targets = await _targetService.getAll();
+  Future<void> _loadBookmarks() async {
+    final bookmarks = await _bookmarkService.getAll();
     if (!mounted) return;
-    setState(() => _targets = targets);
+    setState(() => _bookmarks = bookmarks);
   }
 
   // ------------------------------------------------------------
-  // AGGREGATION: cumulative registrations by year
+  // AGGREGATION
   // ------------------------------------------------------------
-  int get _currentTotal {
-    final real = _domainData.fold<int>(0, (sum, d) => sum + d.registrations);
-    return real + _demoBump;
-  }
+  int get _currentTotal =>
+      _domainData.fold<int>(0, (sum, d) => sum + d.registrations);
 
   Map<int, int> get _cumulativeByYear {
     final byYear = <int, int>{};
@@ -130,180 +78,241 @@ class _GrowthPageState extends State<GrowthPage> {
       running += byYear[y]!;
       cumulative[y] = running;
     }
-    if (cumulative.isNotEmpty && _demoBump > 0) {
-      final lastYear = cumulative.keys.last;
-      cumulative[lastYear] = cumulative[lastYear]! + _demoBump;
+    return cumulative;
+  }
+
+  Map<int, int> get _cumulativeByMonth {
+    final byMonth = <int, int>{};
+    for (final d in _domainData) {
+      final key = d.date.year * 100 + d.date.month;
+      byMonth[key] = (byMonth[key] ?? 0) + d.registrations;
+    }
+    final keys = byMonth.keys.toList()..sort();
+    final cumulative = <int, int>{};
+    int running = 0;
+    for (final k in keys) {
+      running += byMonth[k]!;
+      cumulative[k] = running;
     }
     return cumulative;
   }
 
-  String _timeAgo(DateTime? time) {
-    if (time == null) return '--:--:--';
-    return '${time.hour.toString().padLeft(2, '0')}:'
-        '${time.minute.toString().padLeft(2, '0')}:'
-        '${time.second.toString().padLeft(2, '0')}';
+  double get _yoyGrowthPercent {
+    final cumulative = _cumulativeByYear;
+    final years = cumulative.keys.toList()..sort();
+    if (years.length < 2) return 0;
+    final latest = cumulative[years.last]!;
+    final previous = cumulative[years[years.length - 2]]!;
+    if (previous == 0) return 0;
+    return ((latest - previous) / previous) * 100;
   }
 
   // ------------------------------------------------------------
-  // CRUD: Add / Edit target
+  // CRUD: Create
   // ------------------------------------------------------------
-  Future<void> _openTargetForm({GrowthTarget? existing}) async {
-    final labelController = TextEditingController(text: existing?.label ?? '');
-    final valueController = TextEditingController(
-      text: existing != null ? existing.targetValue.toString() : '',
-    );
-    DateTime selectedDeadline =
-        existing?.deadline ?? DateTime.now().add(const Duration(days: 30));
+  Future<void> _saveSnapshot() async {
+    if (_bookmarks.length >= _maxBookmarks) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You can save up to 6 bookmarks only.'),
+        ),
+      );
+      return;
+    }
+
+    final labelController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      existing == null ? 'New Growth Target' : 'Edit Growth Target',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: labelController,
-                      maxLength: 40,
-                      decoration: const InputDecoration(
-                        labelText: 'Label',
-                        hintText: 'e.g. Reach 2M .MY domains',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Label is required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: valueController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Target registrations',
-                        hintText: 'e.g. 2000000',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Target value is required';
-                        }
-                        final parsed = int.tryParse(value.trim());
-                        if (parsed == null) {
-                          return 'Enter a whole number';
-                        }
-                        if (parsed <= 0) {
-                          return 'Target must be greater than 0';
-                        }
-                        if (parsed <= _currentTotal) {
-                          return 'Target must be above current total (${_currentTotal})';
-                        }
-                        if (parsed > 100000000) {
-                          return 'Target is unrealistically high';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Icon(Icons.event, size: 20, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Deadline: ${selectedDeadline.day}/${selectedDeadline.month}/${selectedDeadline.year}',
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: selectedDeadline,
-                              firstDate: DateTime.now().add(const Duration(days: 1)),
-                              lastDate: DateTime.now().add(const Duration(days: 3650)),
-                            );
-                            if (picked != null) {
-                              setSheetState(() => selectedDeadline = picked);
-                            }
-                          },
-                          child: const Text('Change'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        onPressed: () async {
-                          if (!formKey.currentState!.validate()) return;
-
-                          final now = DateTime.now();
-                          if (existing == null) {
-                            await _targetService.create(GrowthTarget(
-                              id: now.microsecondsSinceEpoch.toString(),
-                              label: labelController.text.trim(),
-                              targetValue: int.parse(valueController.text.trim()),
-                              deadline: selectedDeadline,
-                              createdAt: now,
-                              updatedAt: now,
-                            ));
-                          } else {
-                            await _targetService.update(existing.copyWith(
-                              label: labelController.text.trim(),
-                              targetValue: int.parse(valueController.text.trim()),
-                              deadline: selectedDeadline,
-                              updatedAt: now,
-                            ));
-                          }
-
-                          if (context.mounted) Navigator.pop(context);
-                          await _loadTargets();
-                        },
-                        child: Text(
-                          existing == null ? 'Add Target' : 'Save Changes',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Save Snapshot',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(
+                  'Current total: ${(_currentTotal / 1000000).toStringAsFixed(2)}M registrations',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                 ),
-              ),
-            );
-          },
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: labelController,
+                  maxLength: 15,
+                  decoration: const InputDecoration(
+                    labelText: 'Label',
+                    hintText: 'e.g. Before semester break',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: _validateLabel,
+                ),
+
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    onPressed: () async {
+                      if (!formKey.currentState!.validate()) return;
+
+                      final now = DateTime.now();
+                      await _bookmarkService.create(GrowthBookmark(
+                        id: now.microsecondsSinceEpoch.toString(),
+                        label: labelController.text.trim(),
+                        snapshotValue: _currentTotal,
+                        savedAt: now,
+                      ));
+
+                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                      await _loadBookmarks();
+                    },
+                    icon: const Icon(Icons.check, color: Colors.white),
+                    label: const Text('Save', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
   }
 
-  Future<void> _deleteTarget(GrowthTarget target) async {
+  // ------------------------------------------------------------
+  // CRUD: Update
+  // ------------------------------------------------------------
+  Future<void> _editBookmark(GrowthBookmark bookmark) async {
+    final labelController = TextEditingController(text: bookmark.label);
+    final valueController =
+    TextEditingController(text: bookmark.snapshotValue.toString());
+
+    final formKey = GlobalKey<FormState>();
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Edit Bookmark',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Edit Label
+                TextFormField(
+                  controller: labelController,
+                  maxLength: 15,
+                  decoration: const InputDecoration(
+                    labelText: 'Label',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) => _validateLabel(
+                    value,
+                    excludingId: bookmark.id,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Edit Snapshot Value
+                TextFormField(
+                  controller: valueController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Snapshot Value',
+                    hintText: 'Enter registration value',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: _validateValue,
+                ),
+
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () async {
+                      if (!formKey.currentState!.validate()) return;
+
+                      final newValue =
+                      int.parse(valueController.text.trim());
+
+                      await _bookmarkService.update(
+                        bookmark.copyWith(
+                          label: labelController.text.trim(),
+                          snapshotValue: newValue,
+                        ),
+                      );
+
+                      if (sheetContext.mounted) {
+                        Navigator.pop(sheetContext);
+                      }
+
+                      await _loadBookmarks();
+                    },
+                    icon: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Save Changes',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ------------------------------------------------------------
+  // CRUD: Delete
+  // ------------------------------------------------------------
+  Future<void> _deleteBookmark(GrowthBookmark bookmark) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete target?'),
-        content: Text('Remove "${target.label}"? This cannot be undone.'),
+        title: const Text('Delete bookmark?'),
+        content: Text('Remove "${bookmark.label}"? This cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -318,9 +327,68 @@ class _GrowthPageState extends State<GrowthPage> {
     );
 
     if (confirm == true) {
-      await _targetService.delete(target.id);
-      await _loadTargets();
+      await _bookmarkService.delete(bookmark.id);
+      if (_selectedBookmarkId == bookmark.id) {
+        setState(() => _selectedBookmarkId = null);
+      }
+      await _loadBookmarks();
     }
+  }
+
+  // ------------------------------------------------------------
+  // VALIDATION HELPERS
+  // ------------------------------------------------------------
+  static const int _maxBookmarks = 6;
+
+  int _wordCount(String text) =>
+      text.trim().isEmpty ? 0 : text.trim().split(RegExp(r'\s+')).length;
+
+  String? _validateLabel(String? value, {String? excludingId}) {
+    final label = value?.trim() ?? '';
+
+    if (label.isEmpty) {
+      return 'Label is required';
+    }
+
+    // Duplicate check (case-insensitive), ignoring the bookmark being edited
+    final isDuplicate = _bookmarks.any((b) =>
+    b.id != excludingId && b.label.trim().toLowerCase() == label.toLowerCase());
+    if (isDuplicate) {
+      return 'A bookmark with this label already exists';
+    }
+
+    return null;
+  }
+
+  String? _validateValue(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Value is required';
+    }
+
+    final parsed = int.tryParse(value.trim());
+
+    if (parsed == null) {
+      return 'Enter a whole number';
+    }
+
+    if (parsed <= 0) {
+      return 'Value must be greater than 0';
+    }
+
+    if (parsed > _currentTotal) {
+      return 'Value cannot be greater than the current total registration';
+    }
+
+    return null;
+  }
+
+  // ------------------------------------------------------------
+  // FUNCTION: Comparison Highlighter
+  // ------------------------------------------------------------
+  void _toggleCompare(String bookmarkId) {
+    setState(() {
+      _selectedBookmarkId = _selectedBookmarkId == bookmarkId ? null : bookmarkId;
+    });
   }
 
   // ------------------------------------------------------------
@@ -332,24 +400,51 @@ class _GrowthPageState extends State<GrowthPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final cumulative = _cumulativeByYear;
-    final years = cumulative.keys.toList();
+    final cumulative =
+    _view == GrowthView.yearly ? _cumulativeByYear : _cumulativeByMonth;
+    final keys = cumulative.keys.toList();
+    final yoy = _yoyGrowthPercent;
 
-    return RefreshIndicator(
-      onRefresh: () => _fetchData(showLoading: false),
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          _buildStatusBar(),
-          const SizedBox(height: 20),
-          _buildTotalCard(),
-          const SizedBox(height: 24),
-          const Text('Domain Registration Trend',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          SizedBox(
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32), // more bottom breathing room
+      children: [
+        GrowthHeroCard(currentTotal: _currentTotal, yoyGrowthPercent: yoy),
+        const SizedBox(height: 28), // was 20
+        GrowthViewToggle(
+          selected: _view,
+          onChanged: (value) => setState(() => _view = value),
+        ),
+        const SizedBox(height: 24), // was 16
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4), // aligns text nicely with cards
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Domain Registration Trend',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('Cumulative .MY registrations',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16), // was 12
+        Container(
+          padding: const EdgeInsets.fromLTRB(12, 16, 16, 8), // breathing room inside chart card
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.cardShadow,
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: SizedBox(
             height: 220,
-            child: years.length < 2
+            child: keys.length < 2
                 ? const Center(child: Text('Not enough data to chart yet'))
                 : LineChart(
               LineChartData(
@@ -367,13 +462,20 @@ class _GrowthPageState extends State<GrowthPage> {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 24,
                       getTitlesWidget: (value, meta) {
                         final idx = value.toInt();
-                        if (idx < 0 || idx >= years.length) {
+                        if (idx < 0 || idx >= keys.length) {
                           return const SizedBox();
                         }
-                        return Text('${years[idx]}',
-                            style: const TextStyle(fontSize: 11));
+                        final key = keys[idx];
+                        final label = _view == GrowthView.yearly
+                            ? '$key'
+                            : '${key % 100}/${key ~/ 100 % 100}';
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(label, style: const TextStyle(fontSize: 10)),
+                        );
                       },
                     ),
                   ),
@@ -386,166 +488,91 @@ class _GrowthPageState extends State<GrowthPage> {
                     barWidth: 3,
                     dotData: const FlDotData(show: true),
                     spots: [
-                      for (int i = 0; i < years.length; i++)
-                        FlSpot(i.toDouble(), cumulative[years[i]]!.toDouble()),
+                      for (int i = 0; i < keys.length; i++)
+                        FlSpot(i.toDouble(), cumulative[keys[i]]!.toDouble()),
                     ],
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 28),
-          _buildTargetsHeader(),
-          const SizedBox(height: 12),
-          if (_targets.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text(
-                'No growth targets yet. Tap "Add Target" to set one.',
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
-            )
-          else
-            ..._targets.map(_buildTargetCard),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBar() {
-    return Row(
-      children: [
-        Icon(
-          _isOffline ? Icons.cloud_off : Icons.cloud_done,
-          size: 18,
-          color: _isOffline ? AppColors.warning : AppColors.success,
         ),
-        const SizedBox(width: 6),
-        Text(
-          _isOffline ? 'Offline (showing cached data)' : 'Last updated: ${_timeAgo(_lastUpdated)}',
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-        ),
-        const Spacer(),
-        const Text('Demo Mode', style: TextStyle(fontSize: 12)),
-        Switch(
-          value: _demoMode,
-          onChanged: (value) => setState(() => _demoMode = value),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTotalCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: AppColors.heroGradient,
-        borderRadius: BorderRadius.circular(AppSpacing.heroRadius),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Total .MY Registrations',
-                    style: TextStyle(color: Colors.white70, fontSize: 13)),
-                const SizedBox(height: 6),
-                Text(
-                  '${(_currentTotal / 1000000).toStringAsFixed(2)}M',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.trending_up, color: Colors.white, size: 32),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTargetsHeader() {
-    return Row(
-      children: [
-        const Text('Growth Targets',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const Spacer(),
-        TextButton.icon(
-          onPressed: () => _openTargetForm(),
-          icon: const Icon(Icons.add),
-          label: const Text('Add Target'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTargetCard(GrowthTarget target) {
-    final achieved = _currentTotal >= target.targetValue;
-    final progress = (_currentTotal / target.targetValue).clamp(0.0, 1.0);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 28), // was 20
+        Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(target.label,
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                ),
-                if (achieved)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text('🎉 Achieved',
-                        style: TextStyle(
-                            color: AppColors.success,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold)),
-                  ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 20),
-                  onPressed: () => _openTargetForm(existing: target),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  onPressed: () => _deleteTarget(target),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: Colors.grey.shade200,
-                color: achieved ? AppColors.success : AppColors.primary,
+            Expanded(
+              child: GrowthStatTile(
+                icon: Icons.show_chart,
+                label: 'Annual Growth Rate',
+                value: '${yoy >= 0 ? '+' : ''}${yoy.toStringAsFixed(1)}%',
+                color: AppColors.success,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              '${(_currentTotal / 1000000).toStringAsFixed(2)}M / '
-                  '${(target.targetValue / 1000000).toStringAsFixed(2)}M · '
-                  'Deadline ${target.deadline.day}/${target.deadline.month}/${target.deadline.year}',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            const SizedBox(width: 14), // was 12
+            Expanded(
+              child: GrowthStatTile(
+                icon: Icons.public,
+                label: 'Total Registrations',
+                value: '${(_currentTotal / 1000000).toStringAsFixed(2)}M',
+                color: AppColors.primary,
+              ),
             ),
           ],
         ),
-      ),
+
+        Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              const Text('Growth Bookmarks',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _saveSnapshot,
+                icon: const Icon(Icons.bookmark_add_outlined),
+                label: const Text('Save Snapshot'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16), // was 12
+        if (_bookmarks.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+              border: Border.all(
+                color: Colors.grey.shade300,
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.bookmark_border, size: 32, color: Colors.grey.shade400),
+                const SizedBox(height: 8),
+                Text(
+                  'No bookmarks yet. Save a snapshot to compare progress over time.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          )
+        else
+          ..._bookmarks.map((bookmark) => GrowthBookmarkCard(
+            bookmark: bookmark,
+            currentTotal: _currentTotal,
+            isSelected: _selectedBookmarkId == bookmark.id,
+            onTap: () => _toggleCompare(bookmark.id),
+            onEdit: () => _editBookmark(bookmark),
+            onDelete: () => _deleteBookmark(bookmark),
+          )),
+
+        const SizedBox(height: 16), // was 8
+        const DataSourceLabel(),
+        const SizedBox(height: 32), // was 24
+      ],
     );
   }
 }
