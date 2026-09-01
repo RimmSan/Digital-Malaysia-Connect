@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import '../services/theme_service.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -10,18 +16,29 @@ class SettingsPage extends StatelessWidget {
         title: const Text('Settings'),
       ),
       body: ListView(
-        children: const [
-          ListTile(
-            leading: Icon(Icons.dark_mode_outlined),
-            title: Text('Dark Mode'),
-            subtitle: Text('Change application appearance'),
+        children: [
+          // ---- Dark Mode: functional, persists via ThemeService ----
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeService.themeMode,
+            builder: (context, mode, _) {
+              final isDark = mode == ThemeMode.dark;
+              return SwitchListTile(
+                secondary: const Icon(Icons.dark_mode_outlined),
+                title: const Text('Dark Mode'),
+                subtitle: const Text('Change application appearance'),
+                value: isDark,
+                onChanged: (value) {
+                  ThemeService.setDarkMode(value);
+                },
+              );
+            },
           ),
-          ListTile(
+          const ListTile(
             leading: Icon(Icons.language_outlined),
             title: Text('Language'),
             subtitle: Text('English'),
           ),
-          ListTile(
+          const ListTile(
             leading: Icon(Icons.info_outline),
             title: Text('About'),
             subtitle: Text('Digital Malaysia Connect'),

@@ -5,8 +5,11 @@ import 'screens/analytics_page.dart';
 import 'screens/growth_page.dart';
 import 'screens/intelligence_page.dart';
 import 'screens/settings_page.dart';
+import 'services/theme_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ThemeService.load();
   runApp(const MyApp());
 }
 
@@ -15,14 +18,27 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Digital Malaysia Connect',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF1E5A78),
-        useMaterial3: true,
-      ),
-      home: const MainNavigation(),
+    // Rebuilds MaterialApp whenever Settings changes the theme mode.
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeService.themeMode,
+      builder: (context, mode, _) {
+        return MaterialApp(
+          title: 'Digital Malaysia Connect',
+          debugShowCheckedModeBanner: false,
+          themeMode: mode,
+          theme: ThemeData(
+            colorSchemeSeed: const Color(0xFF1E5A78),
+            brightness: Brightness.light,
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorSchemeSeed: const Color(0xFF1E5A78),
+            brightness: Brightness.dark,
+            useMaterial3: true,
+          ),
+          home: const MainNavigation(),
+        );
+      },
     );
   }
 }
@@ -48,22 +64,12 @@ class _MainNavigationState extends State<MainNavigation> {
     'Digital Intelligence',
   ];
 
-  late final List<Widget> _pages;
-
-  @override
-  void initState() {
-    super.initState();
-    _pages = [
-      DashboardPage(onTabRequested: (index) {
-        setState(() {
-          _currentIndex = index;
-        });
-      }),
-      const AnalyticsPage(),
-      const GrowthPage(),
-      const IntelligencePage(),
-    ];
-  }
+  final List<Widget> _pages = const [
+    DashboardPage(),
+    AnalyticsPage(),
+    GrowthPage(),
+    IntelligencePage(),
+  ];
 
   @override
   Widget build(BuildContext context) {

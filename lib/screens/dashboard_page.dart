@@ -13,14 +13,16 @@ import '../models/population_data.dart';
 import '../models/internet_penetration_data.dart';
 import '../models/state_population_data.dart';
 import '../models/dashboard_note.dart';
+import '../models/dashboard_preferences.dart';
+import '../services/dashboard_preference_service.dart';
+import '../widgets/dashboard_customize_sheet.dart';
 import '../utils/dashboard_stats.dart';
 import 'analytics_page.dart';
 import 'growth_page.dart';
 import 'intelligence_page.dart';
 
 class DashboardPage extends StatefulWidget {
-  final Function(int)? onTabRequested;
-  const DashboardPage({super.key, this.onTabRequested});
+  const DashboardPage({super.key});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -29,6 +31,10 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final ApiService _apiService = ApiService();
   final DashboardNotesService _notesService = DashboardNotesService();
+  final DashboardPreferencesService _preferencesService =
+  DashboardPreferencesService();
+
+  DashboardPreferences _preferences = DashboardPreferences();
 
   List<DomainData> _domains = [];
   List<PopulationData> _population = [];
@@ -75,6 +81,7 @@ class _DashboardPageState extends State<DashboardPage> {
       ]);
 
       final notes = await _notesService.getAll();
+      final preferences = await _preferencesService.get();
 
       setState(() {
         _domains = results[0] as List<DomainData>;
@@ -82,6 +89,7 @@ class _DashboardPageState extends State<DashboardPage> {
         _internetPenetration = results[2] as List<InternetPenetrationData>;
         _statePopulation = results[3] as List<StatePopulationData>;
         _notes = notes;
+        _preferences = preferences;
         _isLoading = false;
         _lastUpdated = DateTime.now();
       });
@@ -91,6 +99,21 @@ class _DashboardPageState extends State<DashboardPage> {
         _errorMessage = 'Failed to load dashboard data. Pull down or tap '
             'retry to try again.';
       });
+    }
+  }
+
+  // ============================================================
+  // PERSONALISED DASHBOARD (Customize)
+  // ============================================================
+
+  Future<void> _openCustomizeSheet() async {
+    final result = await showCustomizeDashboardSheet(
+      context,
+      current: _preferences,
+    );
+    if (result != null) {
+      setState(() => _preferences = result);
+      await _preferencesService.save(result);
     }
   }
 
@@ -276,126 +299,154 @@ class _DashboardPageState extends State<DashboardPage> {
               // ============================================================
               // KEY INDICATORS
               // ============================================================
-              const SectionTitle(title: 'Key Digital Indicators'),
-              const SizedBox(height: 12),
-
-              StatisticCard(
-                title: 'Internet Penetration',
-                value: DashboardStats.internetPenetration(_internetPenetration),
-                subtitle: 'Mobile broadband · Malaysia',
-                icon: Icons.wifi,
-                iconColor: AppColors.internet,
+              SectionTitle(
+                title: 'Key Digital Indicators',
+                trailing: IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.tune, size: 20),
+                  tooltip: 'Customize Dashboard',
+                  onPressed: _openCustomizeSheet,
+                ),
               ),
               const SizedBox(height: 12),
 
-              StatisticCard(
-                title: '.MY Domain Registration',
-                value: DashboardStats.domainRegistrations(_domains),
-                subtitle: 'Registered domains, latest period',
-                icon: Icons.language,
-                iconColor: AppColors.domains,
-              ),
-              const SizedBox(height: 12),
+              if (_preferences.showInternetCard) ...[
+                StatisticCard(
+                  title: 'Internet Penetration',
+                  value:
+                  DashboardStats.internetPenetration(_internetPenetration),
+                  subtitle: 'Mobile broadband · Malaysia',
+                  icon: Icons.wifi,
+                  iconColor: AppColors.internet,
+                ),
+                const SizedBox(height: 12),
+              ],
 
-              StatisticCard(
-                title: 'Population',
-                value: DashboardStats.population(_population),
-                subtitle: 'Malaysia population, latest period',
-                icon: Icons.people_alt_outlined,
-                iconColor: AppColors.population,
-              ),
+              if (_preferences.showDomainsCard) ...[
+                StatisticCard(
+                  title: '.MY Domain Registration',
+                  value: DashboardStats.domainRegistrations(_domains),
+                  subtitle: 'Registered domains, latest period',
+                  icon: Icons.language,
+                  iconColor: AppColors.domains,
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              if (_preferences.showPopulationCard)
+                StatisticCard(
+                  title: 'Population',
+                  value: DashboardStats.population(_population),
+                  subtitle: 'Malaysia population, latest period',
+                  icon: Icons.people_alt_outlined,
+                  iconColor: AppColors.population,
+                ),
+
+              if (!_preferences.showInternetCard &&
+                  !_preferences.showDomainsCard &&
+                  !_preferences.showPopulationCard)
+                EmptyStateView(
+                  icon: Icons.tune,
+                  message: 'All indicator cards are hidden. Tap the tune '
+                      'icon above to bring them back.',
+                ),
 
               const SizedBox(height: AppSpacing.sectionGap),
 
               // ============================================================
-              // FEATURE 1: TRENDS (sparkline charts over time)
+              // FEATURE: TRENDS (sparkline charts over time)
               // ============================================================
-              const SectionTitle(
-                title: 'Trends',
-                subtitle: 'How things have moved over the recorded period',
-              ),
-              const SizedBox(height: 12),
+              if (_preferences.showTrends) ...[
+                const SectionTitle(
+                  title: 'Trends',
+                  subtitle: 'How things have moved over the recorded period',
+                ),
+                const SizedBox(height: 12),
 
-              _TrendCard(
-                title: 'Internet Penetration (Mobile Broadband)',
-                latestLabel: internetTrend.isNotEmpty
-                    ? '${internetTrend.last.toStringAsFixed(1)}% latest'
-                    : 'No data',
-                values: internetTrend,
-                color: AppColors.internet,
-              ),
-              const SizedBox(height: 12),
+                _TrendCard(
+                  title: 'Internet Penetration (Mobile Broadband)',
+                  latestLabel: internetTrend.isNotEmpty
+                      ? '${internetTrend.last.toStringAsFixed(1)}% latest'
+                      : 'No data',
+                  values: internetTrend,
+                  color: AppColors.internet,
+                ),
+                const SizedBox(height: 12),
 
-              _TrendCard(
-                title: '.MY Domain Registrations',
-                latestLabel: domainTrend.isNotEmpty
-                    ? '${DashboardStats.formatCompact(domainTrend.last)} latest'
-                    : 'No data',
-                values: domainTrend,
-                color: AppColors.domains,
-              ),
+                _TrendCard(
+                  title: '.MY Domain Registrations',
+                  latestLabel: domainTrend.isNotEmpty
+                      ? '${DashboardStats.formatCompact(domainTrend.last)} latest'
+                      : 'No data',
+                  values: domainTrend,
+                  color: AppColors.domains,
+                ),
 
-              const SizedBox(height: AppSpacing.sectionGap),
+                const SizedBox(height: AppSpacing.sectionGap),
+              ],
 
               // ============================================================
               // TOP DIGITAL STATE
               // ============================================================
-              const SectionTitle(title: 'Digital Highlights'),
-              const SizedBox(height: 12),
+              if (_preferences.showHighlights) ...[
+                const SectionTitle(title: 'Digital Highlights'),
+                const SizedBox(height: 12),
 
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.emoji_events_outlined,
+                          color: AppColors.primary,
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.emoji_events_outlined,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'State Population Ranking',
-                            style: TextStyle(fontSize: 13, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            topState?.state ?? '--',
-                            style: const TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.bold,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'State Population Ranking',
+                              style: TextStyle(fontSize: 13, color: Colors.grey),
                             ),
-                          ),
-                          const SizedBox(height: 3),
-                          const Text(
-                            'Highest population among Malaysian states',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              topState?.state ?? '--',
+                              style: const TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            const Text(
+                              'Highest population among Malaysian states',
+                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                  ],
+                      const Icon(Icons.arrow_forward_ios,
+                          size: 16, color: Colors.grey),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: AppSpacing.sectionGap),
+                const SizedBox(height: AppSpacing.sectionGap),
+              ],
 
               // ============================================================
               // FEATURE 2 + MY INSIGHTS (CRUD): now searchable & filterable
@@ -505,7 +556,14 @@ class _DashboardPageState extends State<DashboardPage> {
                       icon: Icons.analytics_outlined,
                       title: 'Analytics',
                       subtitle: 'View trends',
-                      onTap: () => widget.onTabRequested?.call(1),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AnalyticsPage(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -514,7 +572,14 @@ class _DashboardPageState extends State<DashboardPage> {
                       icon: Icons.trending_up,
                       title: 'Growth',
                       subtitle: 'Track growth',
-                      onTap: () => widget.onTabRequested?.call(2),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const GrowthPage(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -527,7 +592,14 @@ class _DashboardPageState extends State<DashboardPage> {
                   icon: Icons.map_outlined,
                   title: 'Digital Intelligence',
                   subtitle: 'Explore states, rankings and Malaysia map',
-                  onTap: () => widget.onTabRequested?.call(3),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const IntelligencePage(),
+                      ),
+                    );
+                  },
                 ),
               ),
 
