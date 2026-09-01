@@ -17,8 +17,13 @@ class _SavedIntelligenceReportsPageState
   IntelligenceReportsService();
 
   bool _isLoading = true;
+  bool _isUpdating = false;
 
   List<IntelligenceReport> _reports = [];
+
+  static const int _minTitleLength = 3;
+  static const int _maxTitleLength = 60;
+  static const int _maxNoteLength = 300;
 
   @override
   void initState() {
@@ -45,6 +50,49 @@ class _SavedIntelligenceReportsPageState
     });
   }
 
+  // ============================================================
+  // VALIDATE REPORT TITLE
+  // ============================================================
+
+  String? _validateTitle(String value) {
+    final title = value.trim();
+
+    if (title.isEmpty) {
+      return 'Report title is required.';
+    }
+
+    if (title.length < _minTitleLength) {
+      return 'Title must be at least '
+          '$_minTitleLength characters.';
+    }
+
+    if (title.length > _maxTitleLength) {
+      return 'Title cannot exceed '
+          '$_maxTitleLength characters.';
+    }
+
+    return null;
+  }
+
+  // ============================================================
+  // VALIDATE PERSONAL NOTE
+  // ============================================================
+
+  String? _validateNote(String value) {
+    final note = value.trim();
+
+    if (note.length > _maxNoteLength) {
+      return 'Personal note cannot exceed '
+          '$_maxNoteLength characters.';
+    }
+
+    return null;
+  }
+
+  // ============================================================
+  // EDIT REPORT
+  // ============================================================
+
   Future<void> _editReport(
       IntelligenceReport report,
       ) async {
@@ -56,102 +104,224 @@ class _SavedIntelligenceReportsPageState
       text: report.note,
     );
 
+    String? titleError;
+    String? noteError;
+
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(
-            'Edit Intelligence Report',
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Report Title',
-                    prefixIcon: Icon(
-                      Icons.title_outlined,
+      barrierDismissible: !_isUpdating,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text(
+                'Edit Intelligence Report',
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      maxLength: _maxTitleLength,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: 'Report Title',
+                        hintText:
+                        '$_minTitleLength-$_maxTitleLength characters',
+                        prefixIcon: const Icon(
+                          Icons.title_outlined,
+                        ),
+                        border: const OutlineInputBorder(),
+                        errorText: titleError,
+                      ),
+                      onChanged: (value) {
+                        if (titleError != null) {
+                          setDialogState(() {
+                            titleError = _validateTitle(
+                              value,
+                            );
+                          });
+                        }
+                      },
                     ),
-                    border: OutlineInputBorder(),
-                  ),
+
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: noteController,
+                      maxLines: 4,
+                      maxLength: _maxNoteLength,
+                      decoration: InputDecoration(
+                        labelText: 'Personal Note',
+                        hintText:
+                        'Optional - maximum $_maxNoteLength characters',
+                        alignLabelWithHint: true,
+                        prefixIcon: const Icon(
+                          Icons.notes_outlined,
+                        ),
+                        border: const OutlineInputBorder(),
+                        errorText: noteError,
+                      ),
+                      onChanged: (value) {
+                        if (noteError != null) {
+                          setDialogState(() {
+                            noteError = _validateNote(
+                              value,
+                            );
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: _isUpdating
+                      ? null
+                      : () {
+                    Navigator.pop(
+                      dialogContext,
+                      false,
+                    );
+                  },
+                  child: const Text('Cancel'),
                 ),
 
-                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: _isUpdating
+                      ? null
+                      : () {
+                    final titleValidation =
+                    _validateTitle(
+                      titleController.text,
+                    );
 
-                TextField(
-                  controller: noteController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Personal Note',
-                    alignLabelWithHint: true,
-                    prefixIcon: Icon(
-                      Icons.notes_outlined,
-                    ),
-                    border: OutlineInputBorder(),
+                    final noteValidation =
+                    _validateNote(
+                      noteController.text,
+                    );
+
+                    if (titleValidation != null ||
+                        noteValidation != null) {
+                      setDialogState(() {
+                        titleError = titleValidation;
+                        noteError = noteValidation;
+                      });
+
+                      return;
+                    }
+
+                    Navigator.pop(
+                      dialogContext,
+                      true,
+                    );
+                  },
+                  child: const Text(
+                    'Save Changes',
                   ),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(
-                  context,
-                  false,
-                );
-              },
-              child: const Text('Cancel'),
-            ),
-
-            FilledButton(
-              onPressed: () {
-                if (titleController.text
-                    .trim()
-                    .isEmpty) {
-                  return;
-                }
-
-                Navigator.pop(
-                  context,
-                  true,
-                );
-              },
-              child: const Text('Save Changes'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
 
     if (result != true) {
+      titleController.dispose();
+      noteController.dispose();
       return;
     }
 
-    final updatedReport = report.copyWith(
-      title: titleController.text.trim(),
-      note: noteController.text.trim(),
-      updatedAt: DateTime.now(),
-    );
+    if (_isUpdating) {
+      titleController.dispose();
+      noteController.dispose();
+      return;
+    }
 
-    await _reportsService.update(
-      updatedReport,
-    );
+    final title = titleController.text.trim();
+    final note = noteController.text.trim();
 
-    if (!mounted) return;
+    // Defensive validation before saving.
+    final titleValidation = _validateTitle(title);
+    final noteValidation = _validateNote(note);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Report updated successfully.',
+    if (titleValidation != null ||
+        noteValidation != null) {
+      titleController.dispose();
+      noteController.dispose();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            titleValidation ??
+                noteValidation ??
+                'Invalid report information.',
+          ),
         ),
-      ),
-    );
+      );
 
-    await _loadReports();
+      return;
+    }
+
+    setState(() {
+      _isUpdating = true;
+    });
+
+    try {
+      final updatedReport = report.copyWith(
+        title: title,
+        note: note,
+
+        // createdAt is intentionally NOT changed.
+        // Only updatedAt changes when editing.
+        updatedAt: DateTime.now(),
+      );
+
+      await _reportsService.update(
+        updatedReport,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Report updated successfully.',
+          ),
+        ),
+      );
+
+      await _loadReports();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to update report. Please try again.',
+          ),
+        ),
+      );
+    } finally {
+      titleController.dispose();
+      noteController.dispose();
+
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+      }
+    }
   }
+
+  // ============================================================
+  // DELETE REPORT
+  // ============================================================
 
   Future<void> _deleteReport(
       IntelligenceReport report,
@@ -219,6 +389,10 @@ class _SavedIntelligenceReportsPageState
     await _loadReports();
   }
 
+  // ============================================================
+  // VIEW REPORT
+  // ============================================================
+
   void _viewReport(
       IntelligenceReport report,
       ) {
@@ -258,8 +432,7 @@ class _SavedIntelligenceReportsPageState
                           ),
                         ),
                         child: const Icon(
-                          Icons
-                              .insights_outlined,
+                          Icons.insights_outlined,
                           color: Color(
                             0xFF168AAD,
                           ),
@@ -275,8 +448,7 @@ class _SavedIntelligenceReportsPageState
                           children: [
                             Text(
                               report.title,
-                              style:
-                              const TextStyle(
+                              style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight:
                                 FontWeight.bold,
@@ -317,8 +489,7 @@ class _SavedIntelligenceReportsPageState
                     'Generated Insight',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight:
-                      FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
@@ -326,8 +497,7 @@ class _SavedIntelligenceReportsPageState
 
                   Container(
                     width: double.infinity,
-                    padding:
-                    const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: const Color(
                         0xFFEAF7FC,
@@ -557,8 +727,8 @@ class _SavedIntelligenceReportsPageState
             Text(
               '${_reports.length} saved report${_reports.length == 1 ? '' : 's'}',
               style: TextStyle(
-                color:
-                Colors.grey.shade600,
+                color: Colors
+                    .grey.shade600,
               ),
             ),
 
@@ -603,6 +773,10 @@ class _SavedIntelligenceReportsPageState
     );
   }
 }
+
+// ============================================================
+// REPORT CARD
+// ============================================================
 
 class _ReportCard extends StatelessWidget {
   final IntelligenceReport report;
@@ -684,8 +858,7 @@ class _ReportCard extends StatelessWidget {
                       maxLines: 2,
                       overflow:
                       TextOverflow.ellipsis,
-                      style:
-                      const TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight:
                         FontWeight.bold,
@@ -781,7 +954,8 @@ class _ReportCard extends StatelessWidget {
                     onDelete();
                   }
                 },
-                itemBuilder: (context) => const [
+                itemBuilder:
+                    (context) => const [
                   PopupMenuItem(
                     value: 'view',
                     child: Row(
@@ -837,6 +1011,10 @@ class _ReportCard extends StatelessWidget {
   }
 }
 
+// ============================================================
+// DETAIL ROW
+// ============================================================
+
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
@@ -849,8 +1027,7 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:
-      const EdgeInsets.only(
+      padding: const EdgeInsets.only(
         bottom: 9,
       ),
       child: Row(

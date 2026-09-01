@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'malaysia_map_page.dart';
 import '../models/state_population_data.dart';
@@ -12,7 +13,8 @@ class IntelligencePage extends StatefulWidget {
   const IntelligencePage({super.key});
 
   @override
-  State<IntelligencePage> createState() => _IntelligencePageState();
+  State<IntelligencePage> createState() =>
+      _IntelligencePageState();
 }
 
 class _IntelligencePageState extends State<IntelligencePage> {
@@ -25,12 +27,21 @@ class _IntelligencePageState extends State<IntelligencePage> {
   ScrollController();
 
   bool _isLoading = true;
+
+  // Prevent repeated Save taps for State Growth Insight.
+  bool _isSavingInsightReport = false;
+
   String? _errorMessage;
 
   List<StatePopulationData> _allPopulationData = [];
   List<StatePopulationData> _latestStates = [];
 
   String? _selectedState;
+
+  // SharedPreferences key used to remember
+  // the user's last selected state.
+  static const String _selectedStateKey =
+      'intelligence_selected_state';
 
   @override
   void initState() {
@@ -42,6 +53,31 @@ class _IntelligencePageState extends State<IntelligencePage> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // ============================================================
+  // SELECTED STATE SHARED PREFERENCE
+  // ============================================================
+
+  Future<String?> _loadSavedState() async {
+    final preferences =
+    await SharedPreferences.getInstance();
+
+    return preferences.getString(
+      _selectedStateKey,
+    );
+  }
+
+  Future<void> _saveSelectedState(
+      String state,
+      ) async {
+    final preferences =
+    await SharedPreferences.getInstance();
+
+    await preferences.setString(
+      _selectedStateKey,
+      state,
+    );
   }
 
   // ============================================================
@@ -76,25 +112,59 @@ class _IntelligencePageState extends State<IntelligencePage> {
               ),
         );
 
+      // Load the state selected during
+      // the previous app session.
+      final savedState =
+      await _loadSavedState();
+
+      String? stateToSelect;
+
+      if (latestStates.isNotEmpty) {
+        // Validate saved state before restoring it.
+        final savedStateExists =
+            savedState != null &&
+                latestStates.any(
+                      (state) =>
+                  state.state ==
+                      savedState,
+                );
+
+        if (savedStateExists) {
+          stateToSelect =
+              savedState;
+        } else {
+          stateToSelect =
+              latestStates.first.state;
+        }
+      }
+
       if (!mounted) return;
 
       setState(() {
-        _allPopulationData = data;
-        _latestStates = latestStates;
+        _allPopulationData =
+            data;
 
-        if (latestStates.isNotEmpty) {
-          _selectedState =
-              latestStates.first.state;
-        }
+        _latestStates =
+            latestStates;
 
-        _isLoading = false;
+        _selectedState =
+            stateToSelect;
+
+        _errorMessage =
+        null;
+
+        _isLoading =
+        false;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
+        _errorMessage =
+            e.toString();
+
+        _isLoading =
+        false;
       });
     }
   }
@@ -110,7 +180,8 @@ class _IntelligencePageState extends State<IntelligencePage> {
     _allPopulationData
         .where(
           (record) =>
-      record.state == state,
+      record.state ==
+          state,
     )
         .toList();
 
@@ -120,7 +191,9 @@ class _IntelligencePageState extends State<IntelligencePage> {
 
     records.sort(
           (a, b) =>
-          b.date.compareTo(a.date),
+          b.date.compareTo(
+            a.date,
+          ),
     );
 
     return records.first;
@@ -130,8 +203,7 @@ class _IntelligencePageState extends State<IntelligencePage> {
   // PREVIOUS CALENDAR YEAR
   // ============================================================
 
-  StatePopulationData?
-  _getPreviousYearRecord(
+  StatePopulationData? _getPreviousYearRecord(
       String state,
       StatePopulationData latest,
       ) {
@@ -141,7 +213,8 @@ class _IntelligencePageState extends State<IntelligencePage> {
     final records =
     _allPopulationData.where(
           (record) =>
-      record.state == state &&
+      record.state ==
+          state &&
           record.date.year ==
               previousYear,
     );
@@ -163,7 +236,8 @@ class _IntelligencePageState extends State<IntelligencePage> {
     final index =
     _latestStates.indexWhere(
           (record) =>
-      record.state == state,
+      record.state ==
+          state,
     );
 
     if (index == -1) {
@@ -207,58 +281,181 @@ class _IntelligencePageState extends State<IntelligencePage> {
   }
 
   // ============================================================
-  // SAVE REPORT
+  // SAVE STATE INSIGHT REPORT
   // ============================================================
 
-  Future<void>
-  _saveStateInsightReport({
+  Future<void> _saveStateInsightReport({
     required String state,
     required String insight,
   }) async {
-    final now = DateTime.now();
+    // Prevent rapid repeated taps.
+    if (_isSavingInsightReport) {
+      return;
+    }
 
-    final report =
-    IntelligenceReport(
-      id: now.microsecondsSinceEpoch
-          .toString(),
-      title: '$state Growth Insight',
-      stateA: state,
-      stateB: null,
-      reportType: 'State Insight',
-      insight: insight,
-      note: '',
-      createdAt: now,
-      updatedAt: now,
+    // Defensive validation:
+    // make sure the state actually exists.
+    final stateExists =
+    _latestStates.any(
+          (record) =>
+      record.state ==
+          state,
     );
 
-    await _reportsService.create(
-      report,
-    );
-
-    if (!mounted) return;
-
-    Navigator.pop(context);
-
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      SnackBar(
-        content: Text(
-          '$state intelligence report saved successfully.',
+    if (!stateExists) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to save report because the selected state is invalid.',
+          ),
         ),
-        action: SnackBarAction(
-          label: 'VIEW',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                const SavedIntelligenceReportsPage(),
-              ),
-            );
-          },
+      );
+
+      return;
+    }
+
+    setState(() {
+      _isSavingInsightReport =
+      true;
+    });
+
+    try {
+      // Load all current saved reports.
+      final existingReports =
+      await _reportsService
+          .getAll();
+
+      // Duplicate rule:
+      //
+      // One State Insight per state.
+      //
+      // We use reportType + stateA,
+      // NOT the title, because users
+      // can edit titles later.
+      final duplicateExists =
+      existingReports.any(
+            (report) =>
+        report.reportType ==
+            'State Insight' &&
+            report.stateA ==
+                state,
+      );
+
+      if (duplicateExists) {
+        if (!mounted) return;
+
+        // Close the Growth Insight sheet.
+        Navigator.pop(context);
+
+        ScaffoldMessenger.of(context)
+            .showSnackBar(
+          SnackBar(
+            content: Text(
+              '$state Growth Insight has already been saved.',
+            ),
+            action:
+            SnackBarAction(
+              label:
+              'VIEW',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) =>
+                    const SavedIntelligenceReportsPage(),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+
+        return;
+      }
+
+      final now =
+      DateTime.now();
+
+      final report =
+      IntelligenceReport(
+        id: now
+            .microsecondsSinceEpoch
+            .toString(),
+        title:
+        '$state Growth Insight',
+        stateA:
+        state,
+        stateB:
+        null,
+        reportType:
+        'State Insight',
+        insight:
+        insight,
+        note:
+        '',
+        createdAt:
+        now,
+        updatedAt:
+        now,
+      );
+
+      await _reportsService
+          .create(
+        report,
+      );
+
+      if (!mounted) return;
+
+      // Close the Growth Insight sheet.
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          content: Text(
+            '$state intelligence report saved successfully.',
+          ),
+          action:
+          SnackBarAction(
+            label:
+            'VIEW',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) =>
+                  const SavedIntelligenceReportsPage(),
+                ),
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      // Close the Growth Insight sheet.
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to save intelligence report. Please try again.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingInsightReport =
+          false;
+        });
+      }
+    }
   }
 
   // ============================================================
@@ -268,21 +465,43 @@ class _IntelligencePageState extends State<IntelligencePage> {
   void _selectStateFromRanking(
       String state,
       ) {
+    // Validate state before selecting it.
+    final stateExists =
+    _latestStates.any(
+          (record) =>
+      record.state ==
+          state,
+    );
+
+    if (!stateExists) {
+      return;
+    }
+
     setState(() {
-      _selectedState = state;
+      _selectedState =
+          state;
     });
+
+    // Remember selected state.
+    _saveSelectedState(
+      state,
+    );
 
     Future.delayed(
       const Duration(
-        milliseconds: 100,
+        milliseconds:
+        100,
       ),
           () {
         if (_scrollController
             .hasClients) {
-          _scrollController.animateTo(
+          _scrollController
+              .animateTo(
             0,
-            duration: const Duration(
-              milliseconds: 500,
+            duration:
+            const Duration(
+              milliseconds:
+              500,
             ),
             curve:
             Curves.easeInOut,
@@ -305,7 +524,9 @@ class _IntelligencePageState extends State<IntelligencePage> {
     }
 
     final latest =
-    _getLatestRecord(state);
+    _getLatestRecord(
+      state,
+    );
 
     if (latest == null) {
       return;
@@ -324,7 +545,9 @@ class _IntelligencePageState extends State<IntelligencePage> {
     );
 
     final ranking =
-    _getStateRanking(state);
+    _getStateRanking(
+      state,
+    );
 
     String growthMessage;
 
@@ -351,146 +574,188 @@ class _IntelligencePageState extends State<IntelligencePage> {
     }
 
     showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (context) {
-        return Padding(
-          padding:
-          const EdgeInsets.fromLTRB(
-            24,
-            8,
-            24,
-            32,
-          ),
-          child: Column(
-            mainAxisSize:
-            MainAxisSize.min,
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$state Growth Insight',
-                style:
-                const TextStyle(
-                  fontSize: 21,
-                  fontWeight:
-                  FontWeight.bold,
-                ),
+      context:
+      context,
+      showDragHandle:
+      true,
+      isScrollControlled:
+      true,
+      builder: (
+          context,
+          ) {
+        return StatefulBuilder(
+          builder: (
+              context,
+              setModalState,
+              ) {
+            return Padding(
+              padding:
+              const EdgeInsets.fromLTRB(
+                24,
+                8,
+                24,
+                32,
               ),
-
-              const SizedBox(
-                height: 20,
-              ),
-
-              _InsightRow(
-                label:
-                'Latest Population',
-                value:
-                _formatPopulation(
-                  latest.population,
-                ),
-              ),
-
-              _InsightRow(
-                label:
-                'Latest Year',
-                value:
-                latest.date.year
-                    .toString(),
-              ),
-
-              _InsightRow(
-                label:
-                'Compared With',
-                value:
-                previous == null
-                    ? '${latest.date.year - 1} unavailable'
-                    : previous
-                    .date.year
-                    .toString(),
-              ),
-
-              _InsightRow(
-                label:
-                'Malaysia Ranking',
-                value:
-                ranking == 0
-                    ? 'N/A'
-                    : '#$ranking',
-              ),
-
-              _InsightRow(
-                label: 'Growth',
-                value:
-                growth == null
-                    ? 'N/A'
-                    : '${growth >= 0 ? '+' : ''}'
-                    '${growth.toStringAsFixed(2)}%',
-              ),
-
-              const SizedBox(
-                height: 18,
-              ),
-
-              Container(
-                width:
-                double.infinity,
-                padding:
-                const EdgeInsets.all(
-                  16,
-                ),
-                decoration:
-                BoxDecoration(
-                  color:
-                  const Color(
-                    0xFF1E5A78,
-                  ).withValues(
-                    alpha: 0.08,
+              child: Column(
+                mainAxisSize:
+                MainAxisSize.min,
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$state Growth Insight',
+                    style:
+                    const TextStyle(
+                      fontSize:
+                      21,
+                      fontWeight:
+                      FontWeight.bold,
+                    ),
                   ),
-                  borderRadius:
-                  BorderRadius.circular(
-                    16,
-                  ),
-                ),
-                child: Text(
-                  growthMessage,
-                  style:
-                  const TextStyle(
-                    height: 1.5,
-                  ),
-                ),
-              ),
 
-              const SizedBox(
-                height: 18,
-              ),
+                  const SizedBox(
+                    height:
+                    20,
+                  ),
 
-              SizedBox(
-                width:
-                double.infinity,
-                child:
-                FilledButton.icon(
-                  onPressed: () async {
-                    await _saveStateInsightReport(
-                      state: state,
-                      insight:
+                  _InsightRow(
+                    label:
+                    'Latest Population',
+                    value:
+                    _formatPopulation(
+                      latest.population,
+                    ),
+                  ),
+
+                  _InsightRow(
+                    label:
+                    'Latest Year',
+                    value:
+                    latest.date.year
+                        .toString(),
+                  ),
+
+                  _InsightRow(
+                    label:
+                    'Compared With',
+                    value:
+                    previous == null
+                        ? '${latest.date.year - 1} unavailable'
+                        : previous.date.year
+                        .toString(),
+                  ),
+
+                  _InsightRow(
+                    label:
+                    'Malaysia Ranking',
+                    value:
+                    ranking == 0
+                        ? 'N/A'
+                        : '#$ranking',
+                  ),
+
+                  _InsightRow(
+                    label:
+                    'Growth',
+                    value:
+                    growth == null
+                        ? 'N/A'
+                        : '${growth >= 0 ? '+' : ''}'
+                        '${growth.toStringAsFixed(2)}%',
+                  ),
+
+                  const SizedBox(
+                    height:
+                    18,
+                  ),
+
+                  Container(
+                    width:
+                    double.infinity,
+                    padding:
+                    const EdgeInsets.all(
+                      16,
+                    ),
+                    decoration:
+                    BoxDecoration(
+                      color:
+                      const Color(
+                        0xFF1E5A78,
+                      ).withValues(
+                        alpha:
+                        0.08,
+                      ),
+                      borderRadius:
+                      BorderRadius.circular(
+                        16,
+                      ),
+                    ),
+                    child: Text(
                       growthMessage,
-                    );
-                  },
-                  icon:
-                  const Icon(
-                    Icons
-                        .bookmark_add_outlined,
+                      style:
+                      const TextStyle(
+                        height:
+                        1.5,
+                      ),
+                    ),
                   ),
-                  label:
-                  const Text(
-                    'Save Intelligence Report',
+
+                  const SizedBox(
+                    height:
+                    18,
                   ),
-                ),
+
+                  SizedBox(
+                    width:
+                    double.infinity,
+                    child:
+                    FilledButton.icon(
+                      onPressed:
+                      _isSavingInsightReport
+                          ? null
+                          : () async {
+                        setModalState(
+                              () {},
+                        );
+
+                        await _saveStateInsightReport(
+                          state:
+                          state,
+                          insight:
+                          growthMessage,
+                        );
+                      },
+
+                      icon:
+                      _isSavingInsightReport
+                          ? const SizedBox(
+                        width:
+                        18,
+                        height:
+                        18,
+                        child:
+                        CircularProgressIndicator(
+                          strokeWidth:
+                          2,
+                        ),
+                      )
+                          : const Icon(
+                        Icons
+                            .bookmark_add_outlined,
+                      ),
+
+                      label:
+                      Text(
+                        _isSavingInsightReport
+                            ? 'Saving...'
+                            : 'Save Intelligence Report',
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -524,25 +789,29 @@ class _IntelligencePageState extends State<IntelligencePage> {
             children: [
               const Icon(
                 Icons.error_outline,
-                size: 50,
+                size:
+                50,
               ),
 
               const SizedBox(
-                height: 12,
+                height:
+                12,
               ),
 
               const Text(
                 'Unable to load intelligence data',
                 style:
                 TextStyle(
-                  fontSize: 18,
+                  fontSize:
+                  18,
                   fontWeight:
                   FontWeight.bold,
                 ),
               ),
 
               const SizedBox(
-                height: 8,
+                height:
+                8,
               ),
 
               Text(
@@ -552,7 +821,8 @@ class _IntelligencePageState extends State<IntelligencePage> {
               ),
 
               const SizedBox(
-                height: 16,
+                height:
+                16,
               ),
 
               FilledButton(
@@ -560,6 +830,7 @@ class _IntelligencePageState extends State<IntelligencePage> {
                   setState(() {
                     _isLoading =
                     true;
+
                     _errorMessage =
                     null;
                   });
@@ -595,14 +866,16 @@ class _IntelligencePageState extends State<IntelligencePage> {
             'Malaysia Digital Intelligence',
             style:
             TextStyle(
-              fontSize: 24,
+              fontSize:
+              24,
               fontWeight:
               FontWeight.bold,
             ),
           ),
 
           const SizedBox(
-            height: 6,
+            height:
+            6,
           ),
 
           Text(
@@ -610,33 +883,45 @@ class _IntelligencePageState extends State<IntelligencePage> {
                 'indicators across Malaysian states.',
             style:
             TextStyle(
-              fontSize: 14,
-              height: 1.5,
+              fontSize:
+              14,
+              height:
+              1.5,
               color:
               Colors.grey.shade600,
             ),
           ),
 
           const SizedBox(
-            height: 24,
+            height:
+            24,
           ),
 
           const Text(
             'State Intelligence',
             style:
             TextStyle(
-              fontSize: 18,
+              fontSize:
+              18,
               fontWeight:
               FontWeight.bold,
             ),
           ),
 
           const SizedBox(
-            height: 12,
+            height:
+            12,
           ),
 
-          DropdownButtonFormField<
-              String>(
+          // ====================================================
+          // STATE DROPDOWN
+          // ====================================================
+
+          DropdownButtonFormField<String>(
+            key:
+            ValueKey(
+              _selectedState,
+            ),
             initialValue:
             _selectedState,
             decoration:
@@ -659,8 +944,11 @@ class _IntelligencePageState extends State<IntelligencePage> {
             items:
             _latestStates
                 .map(
-                  (state) =>
-                  DropdownMenuItem(
+                  (
+                  state,
+                  ) =>
+                  DropdownMenuItem<
+                      String>(
                     value:
                     state.state,
                     child:
@@ -670,20 +958,50 @@ class _IntelligencePageState extends State<IntelligencePage> {
                   ),
             )
                 .toList(),
-            onChanged: (value) {
+            onChanged: (
+                value,
+                ) {
+              if (value ==
+                  null) {
+                return;
+              }
+
+              // Validate selected state.
+              final stateExists =
+              _latestStates.any(
+                    (
+                    state,
+                    ) =>
+                state.state ==
+                    value,
+              );
+
+              if (!stateExists) {
+                return;
+              }
+
               setState(() {
                 _selectedState =
                     value;
               });
+
+              // Save using SharedPreferences.
+              _saveSelectedState(
+                value,
+              );
             },
           ),
 
           const SizedBox(
-            height: 16,
+            height:
+            16,
           ),
 
-          if (_selectedState !=
-              null)
+          if (_selectedState != null &&
+              _getLatestRecord(
+                _selectedState!,
+              ) !=
+                  null)
             _StateOverviewCard(
               state:
               _getLatestRecord(
@@ -698,8 +1016,13 @@ class _IntelligencePageState extends State<IntelligencePage> {
             ),
 
           const SizedBox(
-            height: 14,
+            height:
+            14,
           ),
+
+          // ====================================================
+          // GENERATE STATE INSIGHT
+          // ====================================================
 
           SizedBox(
             width:
@@ -707,7 +1030,10 @@ class _IntelligencePageState extends State<IntelligencePage> {
             child:
             FilledButton.icon(
               onPressed:
-              _showStateInsight,
+              _selectedState ==
+                  null
+                  ? null
+                  : _showStateInsight,
               icon:
               const Icon(
                 Icons.auto_graph,
@@ -720,21 +1046,28 @@ class _IntelligencePageState extends State<IntelligencePage> {
           ),
 
           const SizedBox(
-            height: 30,
+            height:
+            30,
           ),
+
+          // ====================================================
+          // EXPLORE INTELLIGENCE
+          // ====================================================
 
           const Text(
             'Explore Intelligence',
             style:
             TextStyle(
-              fontSize: 18,
+              fontSize:
+              18,
               fontWeight:
               FontWeight.bold,
             ),
           ),
 
           const SizedBox(
-            height: 12,
+            height:
+            12,
           ),
 
           Row(
@@ -753,7 +1086,9 @@ class _IntelligencePageState extends State<IntelligencePage> {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) =>
+                            (
+                            context,
+                            ) =>
                         const MalaysiaMapPage(),
                       ),
                     );
@@ -762,13 +1097,15 @@ class _IntelligencePageState extends State<IntelligencePage> {
               ),
 
               const SizedBox(
-                width: 12,
+                width:
+                12,
               ),
 
               Expanded(
                 child:
                 _FeatureCard(
-                  icon: Icons
+                  icon:
+                  Icons
                       .compare_arrows_rounded,
                   title:
                   'Compare States',
@@ -779,7 +1116,9 @@ class _IntelligencePageState extends State<IntelligencePage> {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) =>
+                            (
+                            context,
+                            ) =>
                         const StateComparisonPage(),
                       ),
                     );
@@ -790,11 +1129,13 @@ class _IntelligencePageState extends State<IntelligencePage> {
           ),
 
           const SizedBox(
-            height: 12,
+            height:
+            12,
           ),
 
           _FeatureCard(
-            icon: Icons
+            icon:
+            Icons
                 .bookmark_outline_rounded,
             title:
             'Saved Intelligence Reports',
@@ -805,7 +1146,9 @@ class _IntelligencePageState extends State<IntelligencePage> {
                 context,
                 MaterialPageRoute(
                   builder:
-                      (context) =>
+                      (
+                      context,
+                      ) =>
                   const SavedIntelligenceReportsPage(),
                 ),
               );
@@ -813,21 +1156,28 @@ class _IntelligencePageState extends State<IntelligencePage> {
           ),
 
           const SizedBox(
-            height: 30,
+            height:
+            30,
           ),
+
+          // ====================================================
+          // POPULATION RANKING
+          // ====================================================
 
           const Text(
             'Population Ranking',
             style:
             TextStyle(
-              fontSize: 18,
+              fontSize:
+              18,
               fontWeight:
               FontWeight.bold,
             ),
           ),
 
           const SizedBox(
-            height: 6,
+            height:
+            6,
           ),
 
           Text(
@@ -836,23 +1186,30 @@ class _IntelligencePageState extends State<IntelligencePage> {
             TextStyle(
               color:
               Colors.grey.shade600,
-              fontSize: 13,
+              fontSize:
+              13,
             ),
           ),
 
           const SizedBox(
-            height: 12,
+            height:
+            12,
           ),
 
           ..._latestStates
-              .take(5)
+              .take(
+            5,
+          )
               .toList()
               .asMap()
               .entries
               .map(
-                (entry) {
+                (
+                entry,
+                ) {
               final ranking =
-                  entry.key + 1;
+                  entry.key +
+                      1;
 
               final state =
                   entry.value;
@@ -911,8 +1268,12 @@ class _StateOverviewCard
         gradient:
         const LinearGradient(
           colors: [
-            Color(0xFF1E5A78),
-            Color(0xFF4D8792),
+            Color(
+              0xFF1E5A78,
+            ),
+            Color(
+              0xFF4D8792,
+            ),
           ],
         ),
         borderRadius:
@@ -930,14 +1291,16 @@ class _StateOverviewCard
             const TextStyle(
               color:
               Colors.white,
-              fontSize: 21,
+              fontSize:
+              21,
               fontWeight:
               FontWeight.bold,
             ),
           ),
 
           const SizedBox(
-            height: 18,
+            height:
+            18,
           ),
 
           Row(
@@ -1008,15 +1371,18 @@ class _OverviewValue
           value,
           style:
           const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
+            color:
+            Colors.white,
+            fontSize:
+            18,
             fontWeight:
             FontWeight.bold,
           ),
         ),
 
         const SizedBox(
-          height: 3,
+          height:
+          3,
         ),
 
         Text(
@@ -1025,7 +1391,8 @@ class _OverviewValue
           const TextStyle(
             color:
             Colors.white70,
-            fontSize: 11,
+            fontSize:
+            11,
           ),
         ),
       ],
@@ -1056,7 +1423,8 @@ class _FeatureCard
       BuildContext context,
       ) {
     return Material(
-      color: Theme.of(context)
+      color:
+      Theme.of(context)
           .colorScheme
           .surface,
       borderRadius:
@@ -1064,7 +1432,8 @@ class _FeatureCard
         18,
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap:
+        onTap,
         borderRadius:
         BorderRadius.circular(
           18,
@@ -1082,9 +1451,11 @@ class _FeatureCard
             ),
             border:
             Border.all(
-              color: Colors.grey
+              color:
+              Colors.grey
                   .withValues(
-                alpha: 0.15,
+                alpha:
+                0.15,
               ),
             ),
           ),
@@ -1093,22 +1464,26 @@ class _FeatureCard
             CrossAxisAlignment.start,
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width:
+                42,
+                height:
+                42,
                 decoration:
                 BoxDecoration(
                   color:
                   const Color(
                     0xFF1E5A78,
                   ).withValues(
-                    alpha: 0.10,
+                    alpha:
+                    0.10,
                   ),
                   borderRadius:
                   BorderRadius.circular(
                     12,
                   ),
                 ),
-                child: Icon(
+                child:
+                Icon(
                   icon,
                   color:
                   const Color(
@@ -1118,7 +1493,8 @@ class _FeatureCard
               ),
 
               const SizedBox(
-                height: 12,
+                height:
+                12,
               ),
 
               Text(
@@ -1127,21 +1503,24 @@ class _FeatureCard
                 const TextStyle(
                   fontWeight:
                   FontWeight.bold,
-                  fontSize: 14,
+                  fontSize:
+                  14,
                 ),
               ),
 
               const SizedBox(
-                height: 4,
+                height:
+                4,
               ),
 
               Text(
                 subtitle,
                 style:
                 TextStyle(
-                  color: Colors
-                      .grey.shade600,
-                  fontSize: 11,
+                  color:
+                  Colors.grey.shade600,
+                  fontSize:
+                  11,
                 ),
               ),
             ],
@@ -1175,17 +1554,21 @@ class _RankingTile
       BuildContext context,
       ) {
     return Card(
-      elevation: 0,
+      elevation:
+      0,
       margin:
       const EdgeInsets.only(
-        bottom: 8,
+        bottom:
+        8,
       ),
-      child: ListTile(
-        onTap: onTap,
-
+      child:
+      ListTile(
+        onTap:
+        onTap,
         leading:
         CircleAvatar(
-          child: Text(
+          child:
+          Text(
             '$ranking',
             style:
             const TextStyle(
@@ -1194,8 +1577,8 @@ class _RankingTile
             ),
           ),
         ),
-
-        title: Text(
+        title:
+        Text(
           state,
           style:
           const TextStyle(
@@ -1203,11 +1586,10 @@ class _RankingTile
             FontWeight.w600,
           ),
         ),
-
-        subtitle: Text(
+        subtitle:
+        Text(
           'Population: $population',
         ),
-
         trailing:
         const Icon(
           Icons.chevron_right,
@@ -1238,17 +1620,20 @@ class _InsightRow
     return Padding(
       padding:
       const EdgeInsets.symmetric(
-        vertical: 7,
+        vertical:
+        7,
       ),
-      child: Row(
+      child:
+      Row(
         children: [
           Expanded(
-            child: Text(
+            child:
+            Text(
               label,
               style:
               TextStyle(
-                color: Colors
-                    .grey.shade600,
+                color:
+                Colors.grey.shade600,
               ),
             ),
           ),
