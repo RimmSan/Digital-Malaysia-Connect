@@ -148,4 +148,32 @@ class DashboardStats {
     final sortedDates = totalsByDate.keys.toList()..sort();
     return sortedDates.map((d) => totalsByDate[d]!.toDouble()).toList();
   }
+
+  static const List<String> _monthAbbr = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  // ------------------------------------------------------------
+  // Formats a date as "MMM yyyy", e.g. "Jun 2026" - used for the
+  // "Last Updated" stat and the Recent Dataset Updates list.
+  // ------------------------------------------------------------
+  static String formatMonthYear(DateTime date) {
+    return '${_monthAbbr[date.month - 1]} ${date.year}';
+  }
+
+  // ------------------------------------------------------------
+  // Latest date found across a set of dataset "latest" dates -
+  // used for the dashboard's "Last Updated" stat card.
+  // ------------------------------------------------------------
+  static DateTime? overallLastUpdated(List<DateTime?> latestDates) {
+    final valid = latestDates.whereType<DateTime>().toList();
+    if (valid.isEmpty) return null;
+    return valid.reduce((a, b) => a.isAfter(b) ? a : b);
+  }
+
+  static DateTime? latestDate<T>(List<T> items, DateTime Function(T) getDate) {
+    if (items.isEmpty) return null;
+    return items.map(getDate).reduce((a, b) => a.isAfter(b) ? a : b);
+  }
 }

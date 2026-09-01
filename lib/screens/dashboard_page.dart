@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
-import '../widgets/statistic_card.dart';
+import '../widgets/stat_grid_card.dart';
 import '../widgets/note_card.dart';
 import '../widgets/note_form_sheet.dart';
 import '../widgets/section_title.dart';
 import '../widgets/state_views.dart';
 import '../widgets/sparkline_chart.dart';
+import '../widgets/state_ranking_sheet.dart';
+import '../widgets/dashboard_search_bar.dart';
 import '../services/api_service.dart';
 import '../services/dashboard_notes_service.dart';
 import '../models/domain_data.dart';
@@ -14,6 +16,7 @@ import '../models/internet_penetration_data.dart';
 import '../models/state_population_data.dart';
 import '../models/dashboard_note.dart';
 import '../models/dashboard_preferences.dart';
+import '../models/search_result_item.dart';
 import '../services/dashboard_preference_service.dart';
 import '../widgets/dashboard_customize_sheet.dart';
 import '../utils/dashboard_stats.dart';
@@ -44,25 +47,39 @@ class _DashboardPageState extends State<DashboardPage> {
 
   bool _isLoading = true;
   String? _errorMessage;
-  DateTime? _lastUpdated;
+  DateTime? _refreshedAt;
 
-  // ---- My Insights search/filter state ----
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  // ---- Global search (mirrors the mockup's top search bar) ----
+  final TextEditingController _globalSearchController = TextEditingController();
+  String _globalSearchQuery = '';
+  final GlobalKey _statsGridKey = GlobalKey();
+  final GlobalKey _recentUpdatesKey = GlobalKey();
+
+  // ---- My Insights search/filter (separate, scoped to that section) ----
+  final TextEditingController _notesSearchController = TextEditingController();
+  String _notesSearchQuery = '';
   String _selectedCategory = 'All';
 
   @override
   void initState() {
     super.initState();
     _loadDashboardData();
-    _searchController.addListener(() {
-      setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
+    _globalSearchController.addListener(() {
+      setState(() {
+        _globalSearchQuery = _globalSearchController.text.trim().toLowerCase();
+      });
+    });
+    _notesSearchController.addListener(() {
+      setState(() {
+        _notesSearchQuery = _notesSearchController.text.trim().toLowerCase();
+      });
     });
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _globalSearchController.dispose();
+    _notesSearchController.dispose();
     super.dispose();
   }
 
@@ -91,7 +108,7 @@ class _DashboardPageState extends State<DashboardPage> {
         _notes = notes;
         _preferences = preferences;
         _isLoading = false;
-        _lastUpdated = DateTime.now();
+        _refreshedAt = DateTime.now();
       });
     } catch (e) {
       setState(() {
@@ -100,6 +117,11 @@ class _DashboardPageState extends State<DashboardPage> {
             'retry to try again.';
       });
     }
+  }
+
+  Future<void> _reloadNotesOnly() async {
+    final notes = await _notesService.getAll();
+    if (mounted) setState(() => _notes = notes);
   }
 
   // ============================================================
@@ -115,11 +137,6 @@ class _DashboardPageState extends State<DashboardPage> {
       setState(() => _preferences = result);
       await _preferencesService.save(result);
     }
-  }
-
-  Future<void> _reloadNotesOnly() async {
-    final notes = await _notesService.getAll();
-    if (mounted) setState(() => _notes = notes);
   }
 
   // ============================================================
@@ -151,17 +168,147 @@ class _DashboardPageState extends State<DashboardPage> {
     return _notes.where((n) {
       final matchesCategory =
           _selectedCategory == 'All' || n.category == _selectedCategory;
-      final matchesSearch = _searchQuery.isEmpty ||
-          n.title.toLowerCase().contains(_searchQuery) ||
-          n.note.toLowerCase().contains(_searchQuery);
+      final matchesSearch = _notesSearchQuery.isEmpty ||
+          n.title.toLowerCase().contains(_notesSearchQuery) ||
+          n.note.toLowerCase().contains(_notesSearchQuery);
       return matchesCategory && matchesSearch;
     }).toList();
   }
 
-  String _formatTime(DateTime dt) {
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '$h:$m';
+  // ============================================================
+  // GLOBAL SEARCH
+  // ============================================================
+
+  void _clearGlobalSearch() {
+    _globalSearchController.clear();
+    FocusScope.of(context).unfocus();
+  }
+
+  Future<void> _scrollToKey(GlobalKey key) async {
+    final ctx = key.currentContext;
+    if (ctx != null) {
+      await Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.05,
+      );
+    }
+  }
+
+  List<SearchResultItem> _buildSearchResults({
+    required String query,
+    required String internetValue,
+    required String domainsValue,
+    required String populationValue,
+    required int score,
+    required StatePopulationData? topState,
+    required String lastUpdatedLabel,
+  }) {
+    if (query.isEmpty) return [];
+    final results = <SearchResultItem>[];
+
+    // ---- States ----
+    for (final s in _statePopulation) {
+      if (s.state.toLowerCase().contains(query)) {
+        results.add(SearchResultItem(
+          title: s.state,
+          subtitle: '${DashboardStats.formatCompact(s.population)} people',
+          category: 'State',
+          icon: Icons.map_outlined,
+          color: AppColors.population,
+          onTap: () {
+            _clearGlobalSearch();
+            showStateRankingSheet(
+              context,
+              states: _statePopulation,
+              highlightState: s.state,
+            );
+          },
+        ));
+      }
+    }
+
+    // ---- Metrics (the stat grid cards) ----
+    final metrics = <(String, String, IconData, Color)>[
+      ('Internet Penetration', internetValue, Icons.wifi, AppColors.internet),
+      ('My Domains', domainsValue, Icons.language, AppColors.domains),
+      ('Population', populationValue, Icons.people_alt_outlined, AppColors.population),
+      ('Digital Score', '$score/100', Icons.speed, AppColors.primary),
+      (
+      'Top Digital State',
+      topState?.state ?? '--',
+      Icons.emoji_events_outlined,
+      AppColors.warning,
+      ),
+      ('Last Updated', lastUpdatedLabel, Icons.update, AppColors.general),
+    ];
+    for (final m in metrics) {
+      if (m.$1.toLowerCase().contains(query)) {
+        results.add(SearchResultItem(
+          title: m.$1,
+          subtitle: 'Current value: ${m.$2}',
+          category: 'Metric',
+          icon: m.$3,
+          color: m.$4,
+          onTap: () {
+            _clearGlobalSearch();
+            _scrollToKey(_statsGridKey);
+          },
+        ));
+      }
+    }
+
+    // ---- Datasets ----
+    const datasetNames = [
+      'Domain Registrations dataset',
+      'Population dataset',
+      'Internet Penetration dataset',
+      'State Population dataset',
+    ];
+    for (final name in datasetNames) {
+      if (name.toLowerCase().contains(query)) {
+        results.add(SearchResultItem(
+          title: name,
+          subtitle: 'Government open dataset',
+          category: 'Dataset',
+          icon: Icons.dataset_outlined,
+          color: AppColors.domains,
+          onTap: () {
+            _clearGlobalSearch();
+            _scrollToKey(_recentUpdatesKey);
+          },
+        ));
+      }
+    }
+
+    // ---- My Insights ----
+    for (final n in _notes) {
+      if (n.title.toLowerCase().contains(query) ||
+          n.note.toLowerCase().contains(query)) {
+        results.add(SearchResultItem(
+          title: n.title,
+          subtitle: n.note.isNotEmpty ? n.note : 'My Insight',
+          category: 'My Insight',
+          icon: Icons.push_pin_outlined,
+          color: AppColors.forCategory(n.category),
+          onTap: () {
+            _clearGlobalSearch();
+            _editNote(n);
+          },
+        ));
+      }
+    }
+
+    return results.take(20).toList();
+  }
+
+  String _relativeTime(DateTime dt) {
+    final days = DateTime.now().difference(dt).inDays;
+    if (days < 1) return 'Today';
+    if (days < 30) return '${days}d ago';
+    if (days < 365) return '${(days / 30).floor()}mo ago';
+    return '${(days / 365).floor()}yr ago';
   }
 
   @override
@@ -177,7 +324,92 @@ class _DashboardPageState extends State<DashboardPage> {
     final internetTrend =
     DashboardStats.internetPenetrationTrend(_internetPenetration);
     final domainTrend = DashboardStats.domainRegistrationsTrend(_domains);
+    final internetValue = DashboardStats.internetPenetration(_internetPenetration);
+    final domainsValue = DashboardStats.domainRegistrations(_domains);
+    final populationValue = DashboardStats.population(_population);
+
+    final domainsLatest = DashboardStats.latestDate(_domains, (d) => d.date);
+    final populationLatest = DashboardStats.latestDate(_population, (d) => d.date);
+    final internetLatest =
+    DashboardStats.latestDate(_internetPenetration, (d) => d.date);
+    final stateLatest = DashboardStats.latestDate(_statePopulation, (d) => d.date);
+    final overallLastUpdated = DashboardStats.overallLastUpdated(
+      [domainsLatest, populationLatest, internetLatest, stateLatest],
+    );
+    final lastUpdatedLabel = overallLastUpdated != null
+        ? DashboardStats.formatMonthYear(overallLastUpdated)
+        : '--';
+
+    final searchResults = _buildSearchResults(
+      query: _globalSearchQuery,
+      internetValue: internetValue,
+      domainsValue: domainsValue,
+      populationValue: populationValue,
+      score: score,
+      topState: topState,
+      lastUpdatedLabel: lastUpdatedLabel,
+    );
+
     final filteredNotes = _filteredNotes;
+
+    // ---- Stat grid cards, filtered by personalization preferences ----
+    final statCards = <Widget>[
+      if (_preferences.showInternetCard)
+        StatGridCard(
+          label: 'Internet Penetration',
+          value: internetValue,
+          icon: Icons.wifi,
+          color: AppColors.internet,
+        ),
+      if (_preferences.showDomainsCard)
+        StatGridCard(
+          label: 'My Domains',
+          value: domainsValue,
+          icon: Icons.language,
+          color: AppColors.domains,
+        ),
+      if (_preferences.showPopulationCard)
+        StatGridCard(
+          label: 'Population',
+          value: populationValue,
+          icon: Icons.people_alt_outlined,
+          color: AppColors.population,
+        ),
+      if (_preferences.showDigitalScoreCard)
+        StatGridCard(
+          label: 'Digital Score',
+          value: '$score/100',
+          icon: Icons.speed,
+          color: AppColors.primary,
+        ),
+      if (_preferences.showTopStateCard)
+        StatGridCard(
+          label: 'Top Digital State',
+          value: topState?.state ?? '--',
+          icon: Icons.emoji_events_outlined,
+          color: AppColors.warning,
+          onTap: () => showStateRankingSheet(
+            context,
+            states: _statePopulation,
+            highlightState: topState?.state,
+          ),
+        ),
+      if (_preferences.showLastUpdatedCard)
+        StatGridCard(
+          label: 'Last Updated',
+          value: lastUpdatedLabel,
+          icon: Icons.update,
+          color: AppColors.general,
+          onTap: () => _scrollToKey(_recentUpdatesKey),
+        ),
+    ];
+
+    final datasetRows = <(String, DateTime?, IconData, Color)>[
+      ('Domain Registrations', domainsLatest, Icons.language, AppColors.domains),
+      ('Population Data', populationLatest, Icons.people_alt_outlined, AppColors.population),
+      ('Internet Penetration', internetLatest, Icons.wifi, AppColors.internet),
+      ('State Population', stateLatest, Icons.map_outlined, AppColors.general),
+    ];
 
     return SafeArea(
       child: RefreshIndicator(
@@ -194,31 +426,11 @@ class _DashboardPageState extends State<DashboardPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ============================================================
-              // WELCOME SECTION
-              // ============================================================
-              const Text(
-                'Welcome to Digital Malaysia',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Explore Malaysia\'s digital development through '
-                    'government open data.',
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-
-              const SizedBox(height: 22),
-
-              // ============================================================
-              // DIGITAL CONNECTIVITY SCORE
+              // HERO: Welcome back / Malaysia's Digital Pulse
               // ============================================================
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(22),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: AppColors.heroGradient,
                   borderRadius: BorderRadius.circular(AppSpacing.heroRadius),
@@ -237,67 +449,58 @@ class _DashboardPageState extends State<DashboardPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Digital Connectivity Score',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '$score',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 42,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            'Welcome back',
+                            style: TextStyle(color: Colors.white70, fontSize: 13),
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Malaysia Overview',
-                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                            "Malaysia's Digital Pulse",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 21,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Real-time open data monitoring · '
+                                '${DashboardStats.formatMonthYear(DateTime.now())}',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(
-                      width: 82,
-                      height: 82,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 82,
-                            height: 82,
-                            child: CircularProgressIndicator(
-                              value: score / 100,
-                              strokeWidth: 8,
-                              backgroundColor: Colors.white24,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            '$score%',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(14),
                       ),
+                      child: const Icon(Icons.wifi, color: Colors.white, size: 22),
                     ),
                   ],
                 ),
               ),
 
+              const SizedBox(height: 16),
+
+              // ============================================================
+              // GLOBAL SEARCH
+              // ============================================================
+              DashboardSearchBar(
+                controller: _globalSearchController,
+                results: searchResults,
+                isActive: _globalSearchQuery.isNotEmpty,
+              ),
+
               const SizedBox(height: AppSpacing.sectionGap),
 
               // ============================================================
-              // KEY INDICATORS
+              // STAT GRID (personalized via Customize)
               // ============================================================
               SectionTitle(
                 title: 'Key Digital Indicators',
@@ -310,51 +513,40 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               const SizedBox(height: 12),
 
-              if (_preferences.showInternetCard) ...[
-                StatisticCard(
-                  title: 'Internet Penetration',
-                  value:
-                  DashboardStats.internetPenetration(_internetPenetration),
-                  subtitle: 'Mobile broadband · Malaysia',
-                  icon: Icons.wifi,
-                  iconColor: AppColors.internet,
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              if (_preferences.showDomainsCard) ...[
-                StatisticCard(
-                  title: '.MY Domain Registration',
-                  value: DashboardStats.domainRegistrations(_domains),
-                  subtitle: 'Registered domains, latest period',
-                  icon: Icons.language,
-                  iconColor: AppColors.domains,
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              if (_preferences.showPopulationCard)
-                StatisticCard(
-                  title: 'Population',
-                  value: DashboardStats.population(_population),
-                  subtitle: 'Malaysia population, latest period',
-                  icon: Icons.people_alt_outlined,
-                  iconColor: AppColors.population,
-                ),
-
-              if (!_preferences.showInternetCard &&
-                  !_preferences.showDomainsCard &&
-                  !_preferences.showPopulationCard)
-                EmptyStateView(
+              KeyedSubtree(
+                key: _statsGridKey,
+                child: statCards.isEmpty
+                    ? EmptyStateView(
                   icon: Icons.tune,
-                  message: 'All indicator cards are hidden. Tap the tune '
+                  message: 'All stat cards are hidden. Tap the tune '
                       'icon above to bring them back.',
+                )
+                    : Column(
+                  children: [
+                    for (int i = 0; i < statCards.length; i += 2)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: statCards[i]),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: i + 1 < statCards.length
+                                  ? statCards[i + 1]
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
+              ),
 
-              const SizedBox(height: AppSpacing.sectionGap),
+              const SizedBox(height: AppSpacing.sectionGap - 12),
 
               // ============================================================
-              // FEATURE: TRENDS (sparkline charts over time)
+              // TRENDS
               // ============================================================
               if (_preferences.showTrends) ...[
                 const SectionTitle(
@@ -386,70 +578,85 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
 
               // ============================================================
-              // TOP DIGITAL STATE
+              // RECENT DATASET UPDATES
               // ============================================================
-              if (_preferences.showHighlights) ...[
-                const SectionTitle(title: 'Digital Highlights'),
-                const SizedBox(height: 12),
-
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(
-                          Icons.emoji_events_outlined,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'State Population Ranking',
-                              style: TextStyle(fontSize: 13, color: Colors.grey),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              topState?.state ?? '--',
-                              style: const TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            const Text(
-                              'Highest population among Malaysian states',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.arrow_forward_ios,
-                          size: 16, color: Colors.grey),
-                    ],
+              if (_preferences.showRecentUpdates) ...[
+                KeyedSubtree(
+                  key: _recentUpdatesKey,
+                  child: const SectionTitle(
+                    title: 'Recent Dataset Updates',
+                    subtitle: 'Latest record date for each source dataset',
                   ),
                 ),
+                const SizedBox(height: 12),
+                ...datasetRows.map((d) {
+                  final name = d.$1;
+                  final date = d.$2;
+                  final icon = d.$3;
+                  final color = d.$4;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(icon, size: 18, color: color),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                date != null
+                                    ? 'Latest record: ${DashboardStats.formatMonthYear(date)}'
+                                    : 'No data available',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (date != null)
+                          Text(
+                            _relativeTime(date),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
 
-                const SizedBox(height: AppSpacing.sectionGap),
+                const SizedBox(height: AppSpacing.sectionGap - 10),
               ],
 
               // ============================================================
-              // FEATURE 2 + MY INSIGHTS (CRUD): now searchable & filterable
+              // MY INSIGHTS (CRUD, with its own search + filter)
               // ============================================================
               SectionTitle(
                 title: 'My Insights',
@@ -464,16 +671,15 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               const SizedBox(height: 12),
 
-              // ---- Search box ----
               TextField(
-                controller: _searchController,
+                controller: _notesSearchController,
                 decoration: InputDecoration(
                   hintText: 'Search your insights...',
                   prefixIcon: const Icon(Icons.search, size: 20),
-                  suffixIcon: _searchQuery.isNotEmpty
+                  suffixIcon: _notesSearchQuery.isNotEmpty
                       ? IconButton(
                     icon: const Icon(Icons.clear, size: 18),
-                    onPressed: () => _searchController.clear(),
+                    onPressed: _notesSearchController.clear,
                   )
                       : null,
                   isDense: true,
@@ -487,7 +693,6 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               const SizedBox(height: 10),
 
-              // ---- Category filter chips ----
               SizedBox(
                 height: 34,
                 child: ListView(
@@ -541,72 +746,58 @@ class _DashboardPageState extends State<DashboardPage> {
                   },
                 ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: AppSpacing.sectionGap - 12),
 
               // ============================================================
-              // QUICK ACCESS
+              // QUICK ACTIONS (compact icon row)
               // ============================================================
-              const SectionTitle(title: 'Explore More'),
+              const SectionTitle(title: 'Quick Actions'),
               const SizedBox(height: 12),
 
               Row(
                 children: [
                   Expanded(
-                    child: _QuickActionCard(
-                      icon: Icons.analytics_outlined,
-                      title: 'Analytics',
-                      subtitle: 'View trends',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AnalyticsPage(),
-                          ),
-                        );
-                      },
+                    child: _QuickActionIcon(
+                      icon: Icons.bar_chart_outlined,
+                      label: 'Analytics',
+                      color: AppColors.internet,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AnalyticsPage()),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
                   Expanded(
-                    child: _QuickActionCard(
+                    child: _QuickActionIcon(
                       icon: Icons.trending_up,
-                      title: 'Growth',
-                      subtitle: 'Track growth',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const GrowthPage(),
-                          ),
-                        );
-                      },
+                      label: 'Growth',
+                      color: AppColors.population,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const GrowthPage()),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _QuickActionIcon(
+                      icon: Icons.public,
+                      label: 'Intelligence',
+                      color: AppColors.domains,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const IntelligencePage(),
+                        ),
+                      ),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-
-              SizedBox(
-                width: double.infinity,
-                child: _QuickActionCard(
-                  icon: Icons.map_outlined,
-                  title: 'Digital Intelligence',
-                  subtitle: 'Explore states, rankings and Malaysia map',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const IntelligencePage(),
-                      ),
-                    );
-                  },
-                ),
               ),
 
               const SizedBox(height: 24),
 
               // ============================================================
-              // DATA SOURCE / LAST UPDATED
+              // DATA SOURCE / REFRESH TIME
               // ============================================================
               Center(
                 child: Text(
@@ -618,9 +809,12 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 4),
               Center(
                 child: Text(
-                  _lastUpdated != null
-                      ? 'Last updated: ${_formatTime(_lastUpdated!)} · Pull down to refresh'
-                      : 'Last updated: --',
+                  _refreshedAt != null
+                      ? 'App data refreshed at '
+                      '${_refreshedAt!.hour.toString().padLeft(2, '0')}:'
+                      '${_refreshedAt!.minute.toString().padLeft(2, '0')}'
+                      ' · Pull down to refresh'
+                      : 'App data refreshed: --',
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                 ),
               ),
@@ -690,60 +884,46 @@ class _TrendCard extends StatelessWidget {
 }
 
 // ============================================================
-// QUICK ACTION CARD
+// QUICK ACTION ICON (compact, mockup-style)
 // ============================================================
 
-class _QuickActionCard extends StatelessWidget {
+class _QuickActionIcon extends StatelessWidget {
   final IconData icon;
-  final String title;
-  final String subtitle;
+  final String label;
+  final Color color;
   final VoidCallback onTap;
 
-  const _QuickActionCard({
+  const _QuickActionIcon({
     required this.icon,
-    required this.title,
-    required this.subtitle,
+    required this.label,
+    required this.color,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: AppColors.primary),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
               ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
       ),
     );
