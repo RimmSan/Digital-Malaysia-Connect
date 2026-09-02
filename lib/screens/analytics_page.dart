@@ -4,7 +4,7 @@ import '../theme/app_colors.dart';
 import '../widgets/section_title.dart';
 import '../widgets/state_views.dart';
 import '../widgets/statistic_card.dart';
-import '../widgets/sparkline_chart.dart';
+import '../widgets/prediction_sparkline_chart.dart';
 import '../widgets/watchlist_form_sheet.dart';
 import '../services/api_service.dart';
 import '../services/watchlist_service.dart';
@@ -22,7 +22,8 @@ import '../utils/trend_predictor.dart';
 //      history to look at.
 //   2. Digital Trend Prediction   - simple linear regression
 //      over the selected metric + selected quarter range
-//      forecasts the next period.
+//      forecasts the next N quarters, drawn directly on the
+//      chart as a dashed continuation of the real trend line.
 //   3. CRUD - "Analytics Watchlist": user-defined threshold
 //      alerts on a metric, stored locally (Create/Read/Update/
 //      Delete), evaluated live against the latest value.
@@ -49,9 +50,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   String _selectedMetric = WatchlistAlert.metricKeys.first; // fbbRate
 
   // From/To quarter range. Indices into _data (sorted oldest -> newest).
-  // Null until data loads, at which point they default to the full range.
   int? _fromIndex;
   int? _toIndex;
+
+  // How many future quarters to forecast and draw on the chart.
+  int _forecastQuarters = 4;
+  static const List<int> _forecastOptions = [2, 4, 6];
 
   @override
   void initState() {
@@ -76,8 +80,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         _watchlist = watchlist;
         _isLoading = false;
 
-        // Default the range to the full dataset on first load, or if a
-        // refresh returned a differently-sized dataset.
         if (data.isNotEmpty) {
           _fromIndex ??= 0;
           _toIndex ??= data.length - 1;
@@ -144,11 +146,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 
   /// Formats a date as a quarter label, e.g. "Q1 2025".
-  /// Your dataset's dates land on quarter-start months (Mar/Jun/Sep/Dec),
-  /// so this maps month -> quarter number directly.
   String _quarterLabel(DateTime date) {
     final quarter = ((date.month - 1) ~/ 3) + 1;
     return 'Q$quarter ${date.year}';
+  }
+
+  /// Generates a quarter label N quarters after [date] - used to label
+  /// forecasted points that don't have a real date in the dataset.
+  String _quarterLabelAfter(DateTime date, int quartersAhead) {
+    final totalMonths = date.month - 1 + (quartersAhead * 3);
+    final year = date.year + (totalMonths ~/ 12);
+    final month = (totalMonths % 12) + 1;
+    final quarter = ((month - 1) ~/ 3) + 1;
+    return 'Q$quarter $year';
   }
 
   List<InternetPenetrationData> get _rangedData {
@@ -185,7 +195,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             onChanged: (index) {
               setState(() {
                 _fromIndex = index;
-                // Keep the range valid: "From" can't be after "To".
                 if (_toIndex != null && _fromIndex! > _toIndex!) {
                   _toIndex = _fromIndex;
                 }
@@ -203,7 +212,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             onChanged: (index) {
               setState(() {
                 _toIndex = index;
-                // Keep the range valid: "To" can't be before "From".
                 if (_fromIndex != null && _toIndex! < _fromIndex!) {
                   _fromIndex = _toIndex;
                 }
@@ -234,7 +242,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final latestValue = values.isNotEmpty ? values.last : 0.0;
     final firstValue = values.isNotEmpty ? values.first : 0.0;
     final change = latestValue - firstValue;
-    final prediction = TrendPredictor.predictNext(values);
+    final prediction = TrendPredictor.predictNext(
+      values,
+      periodsAhead: _forecastQuarters,
+    );
 
     final fromLabel = _rangedData.isNotEmpty
         ? _quarterLabel(_rangedData.first.date)
@@ -242,6 +253,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final toLabel = _rangedData.isNotEmpty
         ? _quarterLabel(_rangedData.last.date)
         : '--';
+    final lastRealDate = _rangedData.isNotEmpty ? _rangedData.last.date : null;
 
     return SafeArea(
       child: RefreshIndicator(
@@ -333,7 +345,45 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
               const SizedBox(height: AppSpacing.sectionGap),
 
-              // ---- Trend chart ----
+              // ============================================================
+              // FEATURE 2: DIGITAL TREND PREDICTION (on the chart itself)
+              // ============================================================
+              SectionTitle(
+                title: 'Digital Trend Prediction',
+                subtitle: 'Solid line = actual data · dashed line = forecast',
+              ),
+              const SizedBox(height: 12),
+
+              // ---- Forecast horizon picker ----
+              Row(
+                children: [
+                  Text(
+                    'Forecast: ',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                  ..._forecastOptions.map((q) {
+                    final selected = _forecastQuarters == q;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text('$q quarters'),
+                        selected: selected,
+                        onSelected: (_) => setState(() => _forecastQuarters = q),
+                        selectedColor: AppColors.primary,
+                        labelStyle: TextStyle(
+                          fontSize: 12,
+                          color: selected ? Colors.white : Colors.grey.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        backgroundColor: Colors.grey.shade100,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    );
+                  }),
+                ],
+              ),
+              const SizedBox(height: 14),
+
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
@@ -345,34 +395,43 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${WatchlistAlert.labelFor(_selectedMetric)} Trend',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${WatchlistAlert.labelFor(_selectedMetric)} Trend & Forecast',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                        Row(
+                          children: [
+                            _LegendDot(color: AppColors.internet, label: 'Actual'),
+                            const SizedBox(width: 10),
+                            _LegendDot(color: AppColors.warning, label: 'Forecast'),
+                          ],
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
-                    SparklineChart(values: values, color: AppColors.internet),
+                    if (prediction == null)
+                      const EmptyStateView(
+                        icon: Icons.query_stats_outlined,
+                        message: 'Not enough data points in this range to '
+                            'forecast. Widen the From/To range above.',
+                      )
+                    else
+                      PredictionSparklineChart(
+                        historicalValues: values,
+                        forecastValues: prediction.forecastSeries,
+                        historicalColor: AppColors.internet,
+                        forecastColor: AppColors.warning,
+                        height: 100,
+                      ),
                   ],
                 ),
               ),
+              const SizedBox(height: 14),
 
-              const SizedBox(height: AppSpacing.sectionGap),
-
-              // ============================================================
-              // FEATURE 2: DIGITAL TREND PREDICTION
-              // ============================================================
-              const SectionTitle(
-                title: 'Digital Trend Prediction',
-                subtitle: 'Simple linear projection based on the selected range',
-              ),
-              const SizedBox(height: 12),
-
-              if (prediction == null)
-                const EmptyStateView(
-                  icon: Icons.query_stats_outlined,
-                  message: 'Not enough data points in this range to forecast. '
-                      'Widen the From/To range above.',
-                )
-              else
+              if (prediction != null) ...[
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(18),
@@ -383,9 +442,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   child: Row(
                     children: [
                       Icon(
-                        prediction.isRising
-                            ? Icons.trending_up
-                            : Icons.trending_down,
+                        prediction.isRising ? Icons.trending_up : Icons.trending_down,
                         color: Colors.white,
                         size: 32,
                       ),
@@ -410,8 +467,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             const SizedBox(height: 2),
                             Text(
                               '${prediction.isRising ? 'Rising' : 'Falling'} '
-                                  '≈ ${prediction.slopePerPeriod.toStringAsFixed(2)} per quarter '
-                                  '(based on $fromLabel – $toLabel)',
+                                  '≈ ${prediction.slopePerPeriod.toStringAsFixed(2)} per quarter',
                               style: const TextStyle(color: Colors.white70, fontSize: 12),
                             ),
                           ],
@@ -420,6 +476,47 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 12),
+
+                // ---- Forecast breakdown list (one row per future quarter) ----
+                if (lastRealDate != null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Forecast breakdown',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                        ),
+                        const SizedBox(height: 8),
+                        for (int i = 0; i < prediction.forecastSeries.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  _quarterLabelAfter(lastRealDate, i + 1),
+                                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                                ),
+                                Text(
+                                  prediction.forecastSeries[i].toStringAsFixed(1),
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
 
               const SizedBox(height: AppSpacing.sectionGap),
 
@@ -449,7 +546,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _watchlist.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final alert = _watchlist[index];
                     final triggered = _isTriggered(alert);
@@ -465,6 +562,33 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ============================================================
+// LEGEND DOT (small colored circle + label, used above the chart)
+// ============================================================
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+      ],
     );
   }
 }

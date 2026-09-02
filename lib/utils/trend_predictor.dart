@@ -4,7 +4,7 @@
 // Powers the "Digital Trend Prediction" additional feature for
 // the Connectivity Analytics module. Uses ordinary least-squares
 // linear regression over the selected metric's historical values
-// to project the next period. Intentionally simple (no external
+// to project future periods. Intentionally simple (no external
 // ML package needed) but gives a genuine data-driven forecast
 // rather than a hardcoded guess.
 // ============================================================
@@ -14,19 +14,30 @@ class TrendPrediction {
   final double slopePerPeriod;
   final bool isRising;
 
+  /// Forecasted values for periods 1..N ahead of the last known
+  /// period, in order (index 0 = next period, index 1 = the one
+  /// after that, etc).
+  final List<double> forecastSeries;
+
   const TrendPrediction({
     required this.predictedNextValue,
     required this.slopePerPeriod,
     required this.isRising,
+    required this.forecastSeries,
   });
 }
 
 class TrendPredictor {
   /// [values] should be ordered oldest -> newest.
+  /// [periodsAhead] controls how many future points to forecast
+  /// (default 1, matching the original single-quarter prediction).
   /// Returns null if there isn't enough data to fit a line.
-  static TrendPrediction? predictNext(List<double> values) {
+  static TrendPrediction? predictNext(
+      List<double> values, {
+        int periodsAhead = 1,
+      }) {
     final n = values.length;
-    if (n < 2) return null;
+    if (n < 2 || periodsAhead < 1) return null;
 
     // x = 0, 1, 2, ... n-1 (period index)
     final xs = List<double>.generate(n, (i) => i.toDouble());
@@ -46,13 +57,16 @@ class TrendPredictor {
     final slope = numerator / denominator;
     final intercept = yMean - slope * xMean;
 
-    final nextX = n.toDouble(); // next period index
-    final predicted = slope * nextX + intercept;
+    final forecast = List<double>.generate(periodsAhead, (i) {
+      final futureX = (n + i).toDouble(); // period index n, n+1, ...
+      return slope * futureX + intercept;
+    });
 
     return TrendPrediction(
-      predictedNextValue: predicted,
+      predictedNextValue: forecast.first,
       slopePerPeriod: slope,
       isRising: slope >= 0,
+      forecastSeries: forecast,
     );
   }
 }
