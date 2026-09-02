@@ -18,13 +18,6 @@ class ApiService {
   static const String domainsUrl =
       'https://api.data.gov.my/data-catalogue?id=domains&limit=100&sort=-date';
 
-  // Full-history variant used by the Growth Tracker page, which needs
-  // the complete multi-year trend (2007-present) rather than just the
-  // most recent 100 records. Kept separate from `domainsUrl` above so
-  // other modules relying on "most recent" data are unaffected.
-  static const String domainsFullHistoryUrl =
-      'https://api.data.gov.my/data-catalogue?id=domains&limit=5000';
-
   static const String populationUrl =
       'https://api.data.gov.my/data-catalogue?id=population_malaysia&limit=100&sort=-date';
 
@@ -50,63 +43,30 @@ class ApiService {
   // ============================================================
 
   Future<List<DomainData>> getDomainsFullHistory() async {
-    final List<DomainData> allRecords = [];
-    final Set<String> seenKeys = {}; // detects duplicate/non-advancing pages
-    const int pageSize = 100;
-    const int maxPages = 30;
+    final url = Uri.parse(
+      'https://api.data.gov.my/data-catalogue?id=domains'
+          '&date_start=2007-01-01@date&limit=10000&sort=date',
+    );
 
-    for (int page = 1; page <= maxPages; page++) {
-      final url =
-          'https://api.data.gov.my/data-catalogue?id=domains&limit=$pageSize&sort=-date&page=$page';
-      final response = await http.get(Uri.parse(url));
+    final response = await http.get(url);
 
-      if (response.statusCode != 200) {
-        debugPrint('getDomainsFullHistory: request failed at page $page (${response.statusCode})');
-        break;
-      }
-
-      final jsonData = _decodeAsList(response.body, 'domain history data');
-      final pageRecords = _parseList(jsonData, DomainData.fromJson, 'domain');
-
-      if (pageRecords.isEmpty) {
-        debugPrint('getDomainsFullHistory: stopped at page $page — empty page');
-        break;
-      }
-
-      // Build a unique key per record to detect if this "page" is actually
-      // new data, or just the same records the API already gave us before
-      // (which would mean pagination isn't working).
-      int newRecordsThisPage = 0;
-      for (final record in pageRecords) {
-        final key = '${record.date.toIso8601String()}_${record.domain}_${record.series}';
-        if (seenKeys.add(key)) {
-          allRecords.add(record);
-          newRecordsThisPage++;
-        }
-      }
-
-      debugPrint('getDomainsFullHistory: page $page — ${pageRecords.length} fetched, $newRecordsThisPage new');
-
-      if (newRecordsThisPage == 0) {
-        debugPrint('getDomainsFullHistory: stopped at page $page — no new records, pagination not advancing');
-        break;
-      }
-
-      if (pageRecords.length < pageSize) {
-        debugPrint('getDomainsFullHistory: stopped at page $page — reached last page');
-        break;
-      }
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load domain history: ${response.statusCode}');
     }
 
-    if (allRecords.isNotEmpty) {
-      final dates = allRecords.map((d) => d.date).toList()..sort();
-      debugPrint('getDomainsFullHistory: TOTAL fetched ${allRecords.length} unique records');
-      debugPrint('getDomainsFullHistory: earliest = ${dates.first}, latest = ${dates.last}');
-    } else {
-      debugPrint('getDomainsFullHistory: no records fetched at all');
+    final jsonData = _decodeAsList(response.body, 'domain history data');
+    final records = _parseList(jsonData, DomainData.fromJson, 'domain');
+
+    debugPrint('getDomainsFullHistory: fetched ${records.length} records');
+
+    if (records.isNotEmpty) {
+      final dates = records.map((d) => d.date).toList()..sort();
+      debugPrint(
+        'getDomainsFullHistory: earliest = ${dates.first}, latest = ${dates.last}',
+      );
     }
 
-    return allRecords;
+    return records;
   }
   // ============================================================
   // GET MALAYSIA POPULATION DATA (national level)

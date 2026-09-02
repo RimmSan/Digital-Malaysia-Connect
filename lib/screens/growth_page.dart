@@ -84,59 +84,38 @@ class _GrowthPageState extends State<GrowthPage> {
   // DATA AGGREGATION
   // ============================================================
 
-  Map<int, int> get _yearlyData {
-    final result = <int, int>{};
+  // Only the pre-computed cumulative totals for "overall" (all TLDs
+  // combined). The raw dataset also contains per-TLD rows (.com.my,
+  // .net.my, ...) and a "new_net" series (monthly deltas) — mixing
+  // those into a sum would double count and produce meaningless totals.
+  List<DomainData> get _overallCumulative {
+    final filtered = _domainData
+        .where((d) => d.series == 'cumulative' && d.domain == 'overall')
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
 
-    for (final data in _domainData) {
-      result[data.date.year] =
-          (result[data.date.year] ?? 0) + data.registrations;
-    }
-
-    return result;
+    return filtered;
   }
 
-  Map<int, int> get _monthlyData {
-    final result = <int, int>{};
-
-    for (final data in _domainData) {
-      final key = data.date.year * 100 + data.date.month;
-
-      result[key] =
-          (result[key] ?? 0) + data.registrations;
-    }
-
-    return result;
-  }
-
+  // Latest cumulative reading per year (not summed — each row is
+  // already a running total as of that month).
   Map<int, int> get _cumulativeByYear {
-    final yearly = _yearlyData;
-    final years = yearly.keys.toList()..sort();
-
-    if (years.isEmpty) return {};
-
     final result = <int, int>{};
-    int runningTotal = 0;
 
-    for (final year in years) {
-      runningTotal += yearly[year]!;
-      result[year] = runningTotal;
+    for (final data in _overallCumulative) {
+      result[data.date.year] = data.registrations;
     }
 
     return result;
   }
 
+  // Latest cumulative reading per month.
   Map<int, int> get _cumulativeByMonth {
-    final monthly = _monthlyData;
-    final months = monthly.keys.toList()..sort();
-
-    if (months.isEmpty) return {};
-
     final result = <int, int>{};
-    int runningTotal = 0;
 
-    for (final month in months) {
-      runningTotal += monthly[month]!;
-      result[month] = runningTotal;
+    for (final data in _overallCumulative) {
+      final key = data.date.year * 100 + data.date.month;
+      result[key] = data.registrations;
     }
 
     return result;
@@ -571,9 +550,11 @@ class _GrowthPageState extends State<GrowthPage> {
       return 'Value must be greater than 0';
     }
 
-    if (parsed > _currentTotal) {
-      return 'Value cannot exceed current registration';
-    }
+    // NOTE: Intentionally no upper-bound check against _currentTotal.
+    // Allowing a snapshot value higher than the live current total lets
+    // you manually create/edit a snapshot representing an earlier,
+    // higher figure - useful for demoing a "decline since snapshot"
+    // comparison even in periods where live data only shows growth.
 
     return null;
   }
@@ -839,12 +820,14 @@ class _GrowthPageState extends State<GrowthPage> {
     final padding = (maxY - minY) * 0.15;
 
     return Container(
-      height: 280,
+      // Bigger box + more internal breathing room so axis labels
+      // and the curve itself aren't cramped.
+      height: 340,
       padding: const EdgeInsets.fromLTRB(
         8,
+        24,
         20,
         16,
-        8,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -879,12 +862,12 @@ class _GrowthPageState extends State<GrowthPage> {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 42,
+                reservedSize: 52,
                 getTitlesWidget: (value, meta) {
                   return Text(
                     _formatNumber(value.toInt()),
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 11,
                       color: Colors.grey.shade600,
                     ),
                   );
@@ -907,8 +890,10 @@ class _GrowthPageState extends State<GrowthPage> {
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 30,
-                interval: _calculateInterval(keys.length),
+                reservedSize: 36,
+                interval: _view == GrowthView.yearly
+                    ? _calculateInterval(keys.length)
+                    : 1,
                 getTitlesWidget: (value, meta) {
                   final index = value.round();
 
@@ -919,29 +904,40 @@ class _GrowthPageState extends State<GrowthPage> {
 
                   final key = keys[index];
 
-                  String label;
-
                   if (_view == GrowthView.yearly) {
-                    label = key.toString();
-                  } else {
-                    final month =
-                        key % 100;
-
-                    final year =
-                        key ~/ 100;
-
-                    label =
-                    '${_monthName(month)}\n$year';
+                    return Padding(
+                      padding:
+                      const EdgeInsets.only(top: 10),
+                      child: Text(
+                        key.toString(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    );
                   }
+
+                  // Monthly view: only label January of each
+                  // year, so the axis always reads clean years
+                  // instead of drifting months.
+                  final month = key % 100;
+
+                  if (month != 1) {
+                    return const SizedBox();
+                  }
+
+                  final year = key ~/ 100;
 
                   return Padding(
                     padding:
-                    const EdgeInsets.only(top: 8),
+                    const EdgeInsets.only(top: 10),
                     child: Text(
-                      label,
+                      year.toString(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 9,
+                        fontSize: 11,
                         color: Colors.grey.shade600,
                       ),
                     ),
