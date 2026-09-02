@@ -1,7 +1,7 @@
 class GrowthBookmark {
   final String id;
-  String label;
-  int snapshotValue; // now mutable — editable for testing
+  final String label;
+  final int snapshotValue;
   final DateTime savedAt;
 
   GrowthBookmark({
@@ -11,11 +11,15 @@ class GrowthBookmark {
     required this.savedAt,
   });
 
-  GrowthBookmark copyWith({String? label, int? snapshotValue}) {
+  GrowthBookmark copyWith({
+    String? label,
+    int? snapshotValue,
+  }) {
     return GrowthBookmark(
       id: id,
       label: label ?? this.label,
-      snapshotValue: snapshotValue ?? this.snapshotValue,
+      snapshotValue:
+      snapshotValue ?? this.snapshotValue,
       savedAt: savedAt,
     );
   }
@@ -29,12 +33,15 @@ class GrowthBookmark {
     };
   }
 
-  factory GrowthBookmark.fromJson(Map<String, dynamic> json) {
+  factory GrowthBookmark.fromJson(
+      Map<String, dynamic> json) {
     return GrowthBookmark(
       id: json['id'] as String,
       label: json['label'] as String,
-      snapshotValue: json['snapshotValue'] as int,
-      savedAt: DateTime.parse(json['savedAt'] as String),
+      snapshotValue:
+      json['snapshotValue'] as int,
+      savedAt:
+      DateTime.parse(json['savedAt'] as String),
     );
   }
 }

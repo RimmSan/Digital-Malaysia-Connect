@@ -27,8 +27,12 @@ class _GrowthPageState extends State<GrowthPage> {
   List<GrowthBookmark> _bookmarks = [];
 
   bool _isLoading = true;
+  String? _errorMessage;
+
   GrowthView _view = GrowthView.yearly;
   String? _selectedBookmarkId;
+
+  static const int _maxBookmarks = 6;
 
   @override
   void initState() {
@@ -37,79 +41,224 @@ class _GrowthPageState extends State<GrowthPage> {
     _loadBookmarks();
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
   // DATA
-  // ------------------------------------------------------------
+  // ============================================================
+
   Future<void> _loadData() async {
     try {
-      final data = await _apiService.getDomains();
+      // IMPORTANT:
+      // Growth Tracker uses the complete historical dataset.
+      final data = await _apiService.getDomainsFullHistory();
+
       if (!mounted) return;
+
       setState(() {
         _domainData = data;
         _isLoading = false;
+        _errorMessage = null;
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Growth Page Error: $e');
+
       if (!mounted) return;
-      setState(() => _isLoading = false);
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Unable to load growth data.';
+      });
     }
   }
 
   Future<void> _loadBookmarks() async {
     final bookmarks = await _bookmarkService.getAll();
+
     if (!mounted) return;
-    setState(() => _bookmarks = bookmarks);
+
+    setState(() {
+      _bookmarks = bookmarks;
+    });
   }
 
-  // ------------------------------------------------------------
-  // AGGREGATION
-  // ------------------------------------------------------------
-  int get _currentTotal =>
-      _domainData.fold<int>(0, (sum, d) => sum + d.registrations);
+  // ============================================================
+  // DATA AGGREGATION
+  // ============================================================
+
+  Map<int, int> get _yearlyData {
+    final result = <int, int>{};
+
+    for (final data in _domainData) {
+      result[data.date.year] =
+          (result[data.date.year] ?? 0) + data.registrations;
+    }
+
+    return result;
+  }
+
+  Map<int, int> get _monthlyData {
+    final result = <int, int>{};
+
+    for (final data in _domainData) {
+      final key = data.date.year * 100 + data.date.month;
+
+      result[key] =
+          (result[key] ?? 0) + data.registrations;
+    }
+
+    return result;
+  }
 
   Map<int, int> get _cumulativeByYear {
-    final byYear = <int, int>{};
-    for (final d in _domainData) {
-      byYear[d.date.year] = (byYear[d.date.year] ?? 0) + d.registrations;
+    final yearly = _yearlyData;
+    final years = yearly.keys.toList()..sort();
+
+    if (years.isEmpty) return {};
+
+    final result = <int, int>{};
+    int runningTotal = 0;
+
+    for (final year in years) {
+      runningTotal += yearly[year]!;
+      result[year] = runningTotal;
     }
-    final years = byYear.keys.toList()..sort();
-    final cumulative = <int, int>{};
-    int running = 0;
-    for (final y in years) {
-      running += byYear[y]!;
-      cumulative[y] = running;
-    }
-    return cumulative;
+
+    return result;
   }
 
   Map<int, int> get _cumulativeByMonth {
-    final byMonth = <int, int>{};
-    for (final d in _domainData) {
-      final key = d.date.year * 100 + d.date.month;
-      byMonth[key] = (byMonth[key] ?? 0) + d.registrations;
+    final monthly = _monthlyData;
+    final months = monthly.keys.toList()..sort();
+
+    if (months.isEmpty) return {};
+
+    final result = <int, int>{};
+    int runningTotal = 0;
+
+    for (final month in months) {
+      runningTotal += monthly[month]!;
+      result[month] = runningTotal;
     }
-    final keys = byMonth.keys.toList()..sort();
-    final cumulative = <int, int>{};
-    int running = 0;
-    for (final k in keys) {
-      running += byMonth[k]!;
-      cumulative[k] = running;
+
+    return result;
+  }
+
+  // ============================================================
+  // CURRENT TOTAL
+  // ============================================================
+
+  int get _currentTotal {
+    final cumulative = _cumulativeByYear;
+
+    if (cumulative.isEmpty) {
+      return 0;
     }
-    return cumulative;
+
+    final years = cumulative.keys.toList()..sort();
+
+    return cumulative[years.last]!;
+  }
+
+  // ============================================================
+  // GROWTH CALCULATION FUNCTION
+  // ============================================================
+
+  double calculateGrowth(int current, int previous) {
+    if (previous == 0) return 0;
+
+    return ((current - previous) / previous) * 100;
   }
 
   double get _yoyGrowthPercent {
     final cumulative = _cumulativeByYear;
     final years = cumulative.keys.toList()..sort();
+
     if (years.length < 2) return 0;
-    final latest = cumulative[years.last]!;
+
+    final current = cumulative[years.last]!;
     final previous = cumulative[years[years.length - 2]]!;
-    if (previous == 0) return 0;
-    return ((latest - previous) / previous) * 100;
+
+    return calculateGrowth(current, previous);
   }
 
-  // ------------------------------------------------------------
-  // CRUD: Create
-  // ------------------------------------------------------------
+  // ============================================================
+  // GROWTH PERFORMANCE SUMMARY
+  // ============================================================
+
+  double get _highestGrowth {
+    final data = _cumulativeByYear;
+    final years = data.keys.toList()..sort();
+
+    if (years.length < 2) return 0;
+
+    double highest = double.negativeInfinity;
+
+    for (int i = 1; i < years.length; i++) {
+      final growth = calculateGrowth(
+        data[years[i]]!,
+        data[years[i - 1]]!,
+      );
+
+      if (growth > highest) {
+        highest = growth;
+      }
+    }
+
+    return highest;
+  }
+
+  double get _lowestGrowth {
+    final data = _cumulativeByYear;
+    final years = data.keys.toList()..sort();
+
+    if (years.length < 2) return 0;
+
+    double lowest = double.infinity;
+
+    for (int i = 1; i < years.length; i++) {
+      final growth = calculateGrowth(
+        data[years[i]]!,
+        data[years[i - 1]]!,
+      );
+
+      if (growth < lowest) {
+        lowest = growth;
+      }
+    }
+
+    return lowest;
+  }
+
+  double get _averageGrowth {
+    final data = _cumulativeByYear;
+    final years = data.keys.toList()..sort();
+
+    if (years.length < 2) return 0;
+
+    double total = 0;
+
+    for (int i = 1; i < years.length; i++) {
+      total += calculateGrowth(
+        data[years[i]]!,
+        data[years[i - 1]]!,
+      );
+    }
+
+    return total / (years.length - 1);
+  }
+
+  String get _growthStatus {
+    final growth = _yoyGrowthPercent;
+
+    if (growth > 0) return 'Growing';
+    if (growth < 0) return 'Declining';
+
+    return 'Stable';
+  }
+
+  // ============================================================
+  // CRUD: CREATE
+  // ============================================================
+
   Future<void> _saveSnapshot() async {
     if (_bookmarks.length >= _maxBookmarks) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -140,26 +289,39 @@ class _GrowthPageState extends State<GrowthPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Save Snapshot',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text(
-                  'Current total: ${(_currentTotal / 1000000).toStringAsFixed(2)}M registrations',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                const Text(
+                  'Save Growth Snapshot',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'Current total: ${_formatNumber(_currentTotal)} registrations',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                  ),
+                ),
+
                 const SizedBox(height: 16),
+
                 TextFormField(
                   controller: labelController,
                   maxLength: 15,
                   decoration: const InputDecoration(
-                    labelText: 'Label',
-                    hintText: 'e.g. Before semester break',
+                    labelText: 'Snapshot Name',
+                    hintText: 'e.g. Semester Start',
                     border: OutlineInputBorder(),
                   ),
                   validator: _validateLabel,
                 ),
 
                 const SizedBox(height: 16),
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -168,21 +330,35 @@ class _GrowthPageState extends State<GrowthPage> {
                       padding: const EdgeInsets.symmetric(vertical: 15),
                     ),
                     onPressed: () async {
-                      if (!formKey.currentState!.validate()) return;
+                      if (!formKey.currentState!.validate()) {
+                        return;
+                      }
 
                       final now = DateTime.now();
-                      await _bookmarkService.create(GrowthBookmark(
-                        id: now.microsecondsSinceEpoch.toString(),
-                        label: labelController.text.trim(),
-                        snapshotValue: _currentTotal,
-                        savedAt: now,
-                      ));
 
-                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                      await _bookmarkService.create(
+                        GrowthBookmark(
+                          id: now.microsecondsSinceEpoch.toString(),
+                          label: labelController.text.trim(),
+                          snapshotValue: _currentTotal,
+                          savedAt: now,
+                        ),
+                      );
+
+                      if (sheetContext.mounted) {
+                        Navigator.pop(sheetContext);
+                      }
+
                       await _loadBookmarks();
                     },
-                    icon: const Icon(Icons.check, color: Colors.white),
-                    label: const Text('Save', style: TextStyle(color: Colors.white)),
+                    icon: const Icon(
+                      Icons.bookmark_add,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Save Snapshot',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -193,13 +369,18 @@ class _GrowthPageState extends State<GrowthPage> {
     );
   }
 
-  // ------------------------------------------------------------
-  // CRUD: Update
-  // ------------------------------------------------------------
+  // ============================================================
+  // CRUD: UPDATE
+  // ============================================================
+
   Future<void> _editBookmark(GrowthBookmark bookmark) async {
-    final labelController = TextEditingController(text: bookmark.label);
+    final labelController =
+    TextEditingController(text: bookmark.label);
+
     final valueController =
-    TextEditingController(text: bookmark.snapshotValue.toString());
+    TextEditingController(
+      text: bookmark.snapshotValue.toString(),
+    );
 
     final formKey = GlobalKey<FormState>();
 
@@ -221,7 +402,7 @@ class _GrowthPageState extends State<GrowthPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Edit Bookmark',
+                  'Edit Snapshot',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -230,29 +411,27 @@ class _GrowthPageState extends State<GrowthPage> {
 
                 const SizedBox(height: 16),
 
-                // Edit Label
                 TextFormField(
                   controller: labelController,
                   maxLength: 15,
                   decoration: const InputDecoration(
-                    labelText: 'Label',
+                    labelText: 'Snapshot Name',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) => _validateLabel(
-                    value,
-                    excludingId: bookmark.id,
-                  ),
+                  validator: (value) =>
+                      _validateLabel(
+                        value,
+                        excludingId: bookmark.id,
+                      ),
                 ),
 
                 const SizedBox(height: 16),
 
-                // Edit Snapshot Value
                 TextFormField(
                   controller: valueController,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                     labelText: 'Snapshot Value',
-                    hintText: 'Enter registration value',
                     border: OutlineInputBorder(),
                   ),
                   validator: _validateValue,
@@ -268,7 +447,9 @@ class _GrowthPageState extends State<GrowthPage> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     onPressed: () async {
-                      if (!formKey.currentState!.validate()) return;
+                      if (!formKey.currentState!.validate()) {
+                        return;
+                      }
 
                       final newValue =
                       int.parse(valueController.text.trim());
@@ -304,15 +485,20 @@ class _GrowthPageState extends State<GrowthPage> {
     );
   }
 
-  // ------------------------------------------------------------
-  // CRUD: Delete
-  // ------------------------------------------------------------
-  Future<void> _deleteBookmark(GrowthBookmark bookmark) async {
+  // ============================================================
+  // CRUD: DELETE
+  // ============================================================
+
+  Future<void> _deleteBookmark(
+      GrowthBookmark bookmark) async {
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete bookmark?'),
-        content: Text('Remove "${bookmark.label}"? This cannot be undone.'),
+        title: const Text('Delete snapshot?'),
+        content: Text(
+          'Remove "${bookmark.label}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -320,7 +506,10 @@ class _GrowthPageState extends State<GrowthPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -328,32 +517,39 @@ class _GrowthPageState extends State<GrowthPage> {
 
     if (confirm == true) {
       await _bookmarkService.delete(bookmark.id);
+
       if (_selectedBookmarkId == bookmark.id) {
-        setState(() => _selectedBookmarkId = null);
+        setState(() {
+          _selectedBookmarkId = null;
+        });
       }
+
       await _loadBookmarks();
     }
   }
 
-  // ------------------------------------------------------------
-  // VALIDATION HELPERS
-  // ------------------------------------------------------------
-  static const int _maxBookmarks = 6;
+  // ============================================================
+  // VALIDATION
+  // ============================================================
 
-  int _wordCount(String text) =>
-      text.trim().isEmpty ? 0 : text.trim().split(RegExp(r'\s+')).length;
-
-  String? _validateLabel(String? value, {String? excludingId}) {
+  String? _validateLabel(
+      String? value, {
+        String? excludingId,
+      }) {
     final label = value?.trim() ?? '';
 
     if (label.isEmpty) {
       return 'Label is required';
     }
 
-    // Duplicate check (case-insensitive), ignoring the bookmark being edited
-    final isDuplicate = _bookmarks.any((b) =>
-    b.id != excludingId && b.label.trim().toLowerCase() == label.toLowerCase());
-    if (isDuplicate) {
+    final duplicate = _bookmarks.any(
+          (bookmark) =>
+      bookmark.id != excludingId &&
+          bookmark.label.trim().toLowerCase() ==
+              label.toLowerCase(),
+    );
+
+    if (duplicate) {
       return 'A bookmark with this label already exists';
     }
 
@@ -376,203 +572,679 @@ class _GrowthPageState extends State<GrowthPage> {
     }
 
     if (parsed > _currentTotal) {
-      return 'Value cannot be greater than the current total registration';
+      return 'Value cannot exceed current registration';
     }
 
     return null;
   }
 
-  // ------------------------------------------------------------
-  // FUNCTION: Comparison Highlighter
-  // ------------------------------------------------------------
+  // ============================================================
+  // BOOKMARK COMPARISON
+  // ============================================================
+
   void _toggleCompare(String bookmarkId) {
     setState(() {
-      _selectedBookmarkId = _selectedBookmarkId == bookmarkId ? null : bookmarkId;
+      _selectedBookmarkId =
+      _selectedBookmarkId == bookmarkId
+          ? null
+          : bookmarkId;
     });
   }
 
-  // ------------------------------------------------------------
+  // ============================================================
+  // FORMAT NUMBER
+  // ============================================================
+
+  String _formatNumber(int value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(2)}M';
+    }
+
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(1)}K';
+    }
+
+    return value.toString();
+  }
+
+  // ============================================================
   // BUILD
-  // ------------------------------------------------------------
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.cloud_off,
+                size: 48,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _isLoading = true;
+                  });
+
+                  _loadData();
+                },
+                child: const Text('Try Again'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     final cumulative =
-    _view == GrowthView.yearly ? _cumulativeByYear : _cumulativeByMonth;
-    final keys = cumulative.keys.toList();
-    final yoy = _yoyGrowthPercent;
+    _view == GrowthView.yearly
+        ? _cumulativeByYear
+        : _cumulativeByMonth;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32), // more bottom breathing room
-      children: [
-        GrowthHeroCard(currentTotal: _currentTotal, yoyGrowthPercent: yoy),
-        const SizedBox(height: 28), // was 20
-        GrowthViewToggle(
-          selected: _view,
-          onChanged: (value) => setState(() => _view = value),
+    final keys = cumulative.keys.toList()..sort();
+
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          32,
         ),
-        const SizedBox(height: 24), // was 16
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4), // aligns text nicely with cards
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          // HERO
+          GrowthHeroCard(
+            currentTotal: _currentTotal,
+            yoyGrowthPercent: _yoyGrowthPercent,
+          ),
+
+          const SizedBox(height: 24),
+
+          // VIEW SELECTOR
+          GrowthViewToggle(
+            selected: _view,
+            onChanged: (value) {
+              setState(() {
+                _view = value;
+              });
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // GRAPH TITLE
+          const Text(
+            'Domain Registration Growth',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            _view == GrowthView.yearly
+                ? 'Yearly cumulative registrations'
+                : 'Monthly cumulative registrations',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // GRAPH
+          _buildGrowthChart(cumulative, keys),
+
+          const SizedBox(height: 24),
+
+          // STATISTICS
+          Row(
             children: [
-              const Text('Domain Registration Trend',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text('Cumulative .MY registrations',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16), // was 12
-        Container(
-          padding: const EdgeInsets.fromLTRB(12, 16, 16, 8), // breathing room inside chart card
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.cardShadow,
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: SizedBox(
-            height: 220,
-            child: keys.length < 2
-                ? const Center(child: Text('Not enough data to chart yet'))
-                : LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: true),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 24,
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
-                        if (idx < 0 || idx >= keys.length) {
-                          return const SizedBox();
-                        }
-                        final key = keys[idx];
-                        final label = _view == GrowthView.yearly
-                            ? '$key'
-                            : '${key % 100}/${key ~/ 100 % 100}';
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(label, style: const TextStyle(fontSize: 10)),
-                        );
-                      },
-                    ),
-                  ),
+              Expanded(
+                child: GrowthStatTile(
+                  icon: Icons.trending_up,
+                  label: 'Annual Growth',
+                  value:
+                  '${_yoyGrowthPercent >= 0 ? '+' : ''}'
+                      '${_yoyGrowthPercent.toStringAsFixed(1)}%',
+                  color: AppColors.success,
                 ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    isCurved: true,
-                    color: AppColors.primary,
-                    barWidth: 3,
-                    dotData: const FlDotData(show: true),
-                    spots: [
-                      for (int i = 0; i < keys.length; i++)
-                        FlSpot(i.toDouble(), cumulative[keys[i]]!.toDouble()),
-                    ],
-                  ),
-                ],
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: GrowthStatTile(
+                  icon: Icons.public,
+                  label: 'Total Registrations',
+                  value: _formatNumber(_currentTotal),
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // PERFORMANCE SUMMARY
+          _buildPerformanceSummary(),
+
+          const SizedBox(height: 28),
+
+          // BOOKMARK HEADER
+          Row(
+            children: [
+              const Text(
+                'Growth Snapshots',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const Spacer(),
+
+              TextButton.icon(
+                onPressed: _saveSnapshot,
+                icon: const Icon(
+                  Icons.bookmark_add_outlined,
+                  size: 19,
+                ),
+                label: const Text('Save'),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          if (_bookmarks.isEmpty)
+            _buildEmptyBookmarks()
+          else
+            ..._bookmarks.map(
+                  (bookmark) => GrowthBookmarkCard(
+                bookmark: bookmark,
+                currentTotal: _currentTotal,
+                isSelected:
+                _selectedBookmarkId == bookmark.id,
+                onTap: () =>
+                    _toggleCompare(bookmark.id),
+                onEdit: () =>
+                    _editBookmark(bookmark),
+                onDelete: () =>
+                    _deleteBookmark(bookmark),
+              ),
+            ),
+
+          const SizedBox(height: 20),
+
+          const DataSourceLabel(),
+
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // CHART
+  // ============================================================
+
+  Widget _buildGrowthChart(
+      Map<int, int> cumulative,
+      List<int> keys,
+      ) {
+    if (keys.length < 2) {
+      return Container(
+        height: 220,
+        alignment: Alignment.center,
+        child: const Text(
+          'Not enough data to display the growth chart.',
+        ),
+      );
+    }
+
+    final values = keys
+        .map((key) => cumulative[key]!.toDouble())
+        .toList();
+
+    final maxY = values.reduce(
+          (a, b) => a > b ? a : b,
+    );
+
+    final minY = values.reduce(
+          (a, b) => a < b ? a : b,
+    );
+
+    final padding = (maxY - minY) * 0.15;
+
+    return Container(
+      height: 280,
+      padding: const EdgeInsets.fromLTRB(
+        8,
+        20,
+        16,
+        8,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(
+          AppSpacing.cardRadius,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.cardShadow,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: LineChart(
+        LineChartData(
+          minY: (minY - padding).clamp(0, double.infinity),
+          maxY: maxY + padding,
+
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval:
+            maxY > 0 ? maxY / 4 : 1,
+          ),
+
+          borderData: FlBorderData(
+            show: false,
+          ),
+
+          titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 42,
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    _formatNumber(value.toInt()),
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: Colors.grey.shade600,
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: false,
+              ),
+            ),
+
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: false,
+              ),
+            ),
+
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: _calculateInterval(keys.length),
+                getTitlesWidget: (value, meta) {
+                  final index = value.round();
+
+                  if (index < 0 ||
+                      index >= keys.length) {
+                    return const SizedBox();
+                  }
+
+                  final key = keys[index];
+
+                  String label;
+
+                  if (_view == GrowthView.yearly) {
+                    label = key.toString();
+                  } else {
+                    final month =
+                        key % 100;
+
+                    final year =
+                        key ~/ 100;
+
+                    label =
+                    '${_monthName(month)}\n$year';
+                  }
+
+                  return Padding(
+                    padding:
+                    const EdgeInsets.only(top: 8),
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 28), // was 20
-        Row(
-          children: [
-            Expanded(
-              child: GrowthStatTile(
-                icon: Icons.show_chart,
-                label: 'Annual Growth Rate',
-                value: '${yoy >= 0 ? '+' : ''}${yoy.toStringAsFixed(1)}%',
-                color: AppColors.success,
-              ),
+
+          lineTouchData: LineTouchData(
+            handleBuiltInTouches: true,
+
+            touchTooltipData:
+            LineTouchTooltipData(
+              getTooltipColor:
+                  (_) => Colors.black87,
+
+              getTooltipItems:
+                  (touchedSpots) {
+                return touchedSpots.map(
+                      (spot) {
+                    final index =
+                    spot.x.round();
+
+                    if (index < 0 ||
+                        index >= keys.length) {
+                      return null;
+                    }
+
+                    final key =
+                    keys[index];
+
+                    String period;
+
+                    if (_view ==
+                        GrowthView.yearly) {
+                      period =
+                          key.toString();
+                    } else {
+                      final month =
+                          key % 100;
+
+                      final year =
+                          key ~/ 100;
+
+                      period =
+                      '${_monthName(month)} $year';
+                    }
+
+                    return LineTooltipItem(
+                      '$period\n'
+                          '${_formatNumber(spot.y.toInt())} registrations',
+                      const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight:
+                        FontWeight.w600,
+                      ),
+                    );
+                  },
+                ).toList();
+              },
             ),
-            const SizedBox(width: 14), // was 12
-            Expanded(
-              child: GrowthStatTile(
-                icon: Icons.public,
-                label: 'Total Registrations',
-                value: '${(_currentTotal / 1000000).toStringAsFixed(2)}M',
-                color: AppColors.primary,
+          ),
+
+          lineBarsData: [
+            LineChartBarData(
+              isCurved: true,
+              barWidth: 3,
+              color: AppColors.primary,
+
+              isStrokeCapRound: true,
+
+              dotData: FlDotData(
+                show: keys.length <= 12,
               ),
+
+              belowBarData:
+              BarAreaData(
+                show: true,
+              ),
+
+              spots: [
+                for (int i = 0;
+                i < keys.length;
+                i++)
+                  FlSpot(
+                    i.toDouble(),
+                    cumulative[keys[i]]!
+                        .toDouble(),
+                  ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
 
-        Padding(
-          padding: const EdgeInsets.all(10),
-          child: Row(
+  double _calculateInterval(int length) {
+    if (length <= 6) return 1;
+
+    return (length / 6).ceilToDouble();
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    if (month < 1 || month > 12) {
+      return '';
+    }
+
+    return months[month - 1];
+  }
+
+  // ============================================================
+  // PERFORMANCE SUMMARY UI
+  // ============================================================
+
+  Widget _buildPerformanceSummary() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(
+          AppSpacing.cardRadius,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.cardShadow,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Growth Performance',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Row(
             children: [
-              const Text('Growth Bookmarks',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: _saveSnapshot,
-                icon: const Icon(Icons.bookmark_add_outlined),
-                label: const Text('Save Snapshot'),
+              Expanded(
+                child: _performanceItem(
+                  'Highest Growth',
+                  '+${_highestGrowth.toStringAsFixed(1)}%',
+                  Icons.arrow_upward,
+                  AppColors.success,
+                ),
+              ),
+
+              Expanded(
+                child: _performanceItem(
+                  'Lowest Growth',
+                  '${_lowestGrowth.toStringAsFixed(1)}%',
+                  Icons.arrow_downward,
+                  AppColors.danger,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          Row(
+            children: [
+              Expanded(
+                child: _performanceItem(
+                  'Average Growth',
+                  '${_averageGrowth.toStringAsFixed(1)}%',
+                  Icons.analytics_outlined,
+                  AppColors.primary,
+                ),
+              ),
+
+              Expanded(
+                child: _performanceItem(
+                  'Current Status',
+                  _growthStatus,
+                  Icons.trending_up,
+                  AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _performanceItem(
+      String label,
+      String value,
+      IconData icon,
+      Color color,
+      ) {
+    return Row(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: color,
+        ),
+
+        const SizedBox(width: 8),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 16), // was 12
-        if (_bookmarks.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-              border: Border.all(
-                color: Colors.grey.shade300,
-                width: 1,
-              ),
-            ),
-            child: Column(
-              children: [
-                Icon(Icons.bookmark_border, size: 32, color: Colors.grey.shade400),
-                const SizedBox(height: 8),
-                Text(
-                  'No bookmarks yet. Save a snapshot to compare progress over time.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-          )
-        else
-          ..._bookmarks.map((bookmark) => GrowthBookmarkCard(
-            bookmark: bookmark,
-            currentTotal: _currentTotal,
-            isSelected: _selectedBookmarkId == bookmark.id,
-            onTap: () => _toggleCompare(bookmark.id),
-            onEdit: () => _editBookmark(bookmark),
-            onDelete: () => _deleteBookmark(bookmark),
-          )),
-
-        const SizedBox(height: 16), // was 8
-        const DataSourceLabel(),
-        const SizedBox(height: 32), // was 24
       ],
+    );
+  }
+
+  Widget _buildEmptyBookmarks() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        vertical: 28,
+        horizontal: 20,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(
+          AppSpacing.cardRadius,
+        ),
+        border: Border.all(
+          color: Colors.grey.shade300,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.bookmark_border,
+            size: 36,
+            color: Colors.grey.shade400,
+          ),
+
+          const SizedBox(height: 10),
+
+          const Text(
+            'No growth snapshots yet',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            'Save a snapshot to compare future growth.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
