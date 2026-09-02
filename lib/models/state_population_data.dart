@@ -10,10 +10,30 @@ class StatePopulationData {
   });
 
   factory StatePopulationData.fromJson(Map<String, dynamic> json) {
+    final rawState = json['state'];
+    if (rawState is! String || rawState.trim().isEmpty) {
+      throw FormatException('StatePopulationData: missing/invalid state "$rawState"');
+    }
+
+    final rawDate = json['date'];
+    final date = rawDate == null ? null : DateTime.tryParse(rawDate.toString());
+    if (date == null) {
+      throw FormatException(
+        'StatePopulationData: missing/invalid date "$rawDate"',
+      );
+    }
+
+    final rawPopulation = json['population'];
+    if (rawPopulation is! num) {
+      throw FormatException(
+        'StatePopulationData: missing/invalid population "$rawPopulation"',
+      );
+    }
+
     return StatePopulationData(
-      state: json['state'],
-      date: DateTime.parse(json['date']),
-      population: (json['population'] as num).toDouble(),
+      state: rawState,
+      date: date,
+      population: rawPopulation.toDouble(),
     );
   }
 }

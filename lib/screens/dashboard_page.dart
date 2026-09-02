@@ -209,11 +209,15 @@ class _DashboardPageState extends State<DashboardPage> {
     final results = <SearchResultItem>[];
 
     // ---- States ----
-    for (final s in _statePopulation) {
+    // Use the latest-year snapshot only - the raw list can contain
+    // decades of history per state, which would otherwise produce
+    // one duplicate result per year.
+    final latestStates = DashboardStats.latestStateSnapshot(_statePopulation);
+    for (final s in latestStates) {
       if (s.state.toLowerCase().contains(query)) {
         results.add(SearchResultItem(
           title: s.state,
-          subtitle: '${DashboardStats.formatCompact(s.population)} people',
+          subtitle: '${DashboardStats.formatStatePopulation(s.population)} people',
           category: 'State',
           icon: Icons.map_outlined,
           color: AppColors.population,

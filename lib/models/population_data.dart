@@ -14,12 +14,28 @@ class PopulationData {
   });
 
   factory PopulationData.fromJson(Map<String, dynamic> json) {
+    final rawDate = json['date'];
+    final date = rawDate == null ? null : DateTime.tryParse(rawDate.toString());
+    if (date == null) {
+      throw FormatException('PopulationData: missing/invalid date "$rawDate"');
+    }
+
+    final rawPopulation = json['population'];
+    if (rawPopulation is! num) {
+      throw FormatException(
+        'PopulationData: missing/invalid population "$rawPopulation"',
+      );
+    }
+
     return PopulationData(
-      age: json['age'],
-      sex: json['sex'],
-      date: DateTime.parse(json['date']),
-      ethnicity: json['ethnicity'],
-      population: (json['population'] as num).toDouble(),
+      // age/sex/ethnicity feed the "overall/both/overall" filter in
+      // DashboardStats.population() - default to 'unknown' rather
+      // than throwing, so the row is still counted in fallback logic.
+      age: (json['age'] as String?) ?? 'unknown',
+      sex: (json['sex'] as String?) ?? 'unknown',
+      date: date,
+      ethnicity: (json['ethnicity'] as String?) ?? 'unknown',
+      population: rawPopulation.toDouble(),
     );
   }
 }

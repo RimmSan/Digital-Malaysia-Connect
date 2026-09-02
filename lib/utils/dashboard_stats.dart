@@ -78,12 +78,16 @@ class DashboardStats {
   }
 
   // ------------------------------------------------------------
-  // Top state by population (state dataset is already filtered
-  // to overall/both/overall in the source JSON).
+  // Top state by population. State data can arrive as a full
+  // historical time series (multiple rows per state across
+  // years) - always resolve to the latest-year snapshot first,
+  // otherwise a fast-growing state's older-but-still-large rows
+  // can outrank other states' current values.
   // ------------------------------------------------------------
   static StatePopulationData? topState(List<StatePopulationData> data) {
-    if (data.isEmpty) return null;
-    return data.reduce((a, b) => a.population > b.population ? a : b);
+    final snapshot = latestStateSnapshot(data);
+    if (snapshot.isEmpty) return null;
+    return snapshot.reduce((a, b) => a.population > b.population ? a : b);
   }
 
   // ------------------------------------------------------------
@@ -175,5 +179,38 @@ class DashboardStats {
   static DateTime? latestDate<T>(List<T> items, DateTime Function(T) getDate) {
     if (items.isEmpty) return null;
     return items.map(getDate).reduce((a, b) => a.isAfter(b) ? a : b);
+  }
+
+  // ------------------------------------------------------------
+  // Collapses a full historical state-population time series
+  // down to just the most recent year, one row per state. Fixes
+  // duplicate/dominated rankings when the source data spans
+  // multiple decades instead of a single snapshot.
+  // ------------------------------------------------------------
+  static List<StatePopulationData> latestStateSnapshot(
+      List<StatePopulationData> data,
+      ) {
+    if (data.isEmpty) return [];
+
+    final maxDate = data
+        .map((d) => d.date)
+        .reduce((a, b) => a.isAfter(b) ? a : b);
+
+    final Map<String, StatePopulationData> byState = {};
+    for (final d in data) {
+      if (d.date == maxDate) {
+        byState[d.state] = d;
+      }
+    }
+    return byState.values.toList();
+  }
+
+  // ------------------------------------------------------------
+  // data.gov.my reports state population in thousands, same
+  // convention as the national population dataset - multiply
+  // before formatting so displayed values are actual people.
+  // ------------------------------------------------------------
+  static String formatStatePopulation(double populationInThousands) {
+    return formatCompact(populationInThousands * 1000);
   }
 }
