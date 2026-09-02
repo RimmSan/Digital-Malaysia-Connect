@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/dashboard_note.dart';
@@ -29,10 +30,29 @@ class DashboardNotesService {
       return [];
     }
 
-    final List<dynamic> decoded = jsonDecode(raw);
-    final notes = decoded
-        .map((e) => DashboardNote.fromJson(e as Map<String, dynamic>))
-        .toList();
+    List<dynamic> decoded;
+    try {
+      decoded = jsonDecode(raw) as List<dynamic>;
+    } catch (e) {
+      // Corrupted storage (shouldn't normally happen since we only
+      // ever write our own JSON) - fail safe to an empty list rather
+      // than crashing the whole dashboard on startup.
+      debugPrint('DashboardNotesService: corrupted storage, resetting: $e');
+      return [];
+    }
+
+    final notes = <DashboardNote>[];
+    for (final item in decoded) {
+      if (item is! Map<String, dynamic>) {
+        debugPrint('DashboardNotesService: skipping malformed record: $item');
+        continue;
+      }
+      try {
+        notes.add(DashboardNote.fromJson(item));
+      } catch (e) {
+        debugPrint('DashboardNotesService: skipping malformed note: $e');
+      }
+    }
 
     // Most recently updated first.
     notes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));

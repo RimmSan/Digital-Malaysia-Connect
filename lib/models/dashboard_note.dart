@@ -69,14 +69,35 @@ class DashboardNote {
   }
 
   factory DashboardNote.fromJson(Map<String, dynamic> json) {
+    final rawId = json['id'];
+    if (rawId is! String || rawId.isEmpty) {
+      throw FormatException('DashboardNote: missing/invalid id "$rawId"');
+    }
+
+    final rawTitle = json['title'];
+    if (rawTitle is! String || rawTitle.trim().isEmpty) {
+      throw FormatException('DashboardNote: missing/invalid title "$rawTitle"');
+    }
+
+    final createdAt = DateTime.tryParse(json['createdAt']?.toString() ?? '');
+    final updatedAt = DateTime.tryParse(json['updatedAt']?.toString() ?? '');
+
     return DashboardNote(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      category: json['category'] as String? ?? 'General',
-      highlightValue: json['highlightValue'] as String?,
+      id: rawId,
+      title: rawTitle,
+      category: DashboardNote.categories.contains(json['category'])
+          ? json['category'] as String
+          : 'General',
+      highlightValue: (json['highlightValue'] as String?)?.trim().isEmpty ==
+          true
+          ? null
+          : json['highlightValue'] as String?,
       note: json['note'] as String? ?? '',
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      // Fall back to "now" rather than crashing if a date is somehow
+      // missing/corrupted - losing a precise timestamp is far better
+      // than losing the whole note (and every note after it in the list).
+      createdAt: createdAt ?? DateTime.now(),
+      updatedAt: updatedAt ?? DateTime.now(),
     );
   }
 }

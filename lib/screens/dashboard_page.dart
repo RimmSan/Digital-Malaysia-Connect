@@ -146,22 +146,49 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _createNote() async {
     final result = await showNoteFormSheet(context);
     if (result != null) {
-      await _notesService.create(result);
-      await _reloadNotesOnly();
+      try {
+        await _notesService.create(result);
+        await _reloadNotesOnly();
+      } catch (e) {
+        _showSnackBar('Could not save your insight. Please try again.');
+      }
     }
   }
 
   Future<void> _editNote(DashboardNote note) async {
     final result = await showNoteFormSheet(context, existingNote: note);
     if (result != null) {
-      await _notesService.update(result);
-      await _reloadNotesOnly();
+      try {
+        await _notesService.update(result);
+        await _reloadNotesOnly();
+      } catch (e) {
+        _showSnackBar('Could not save your changes. Please try again.');
+      }
     }
   }
 
   Future<void> _deleteNote(String id) async {
+    final removed = _notes.firstWhere((n) => n.id == id);
+    final removedIndex = _notes.indexOf(removed);
     setState(() => _notes.removeWhere((n) => n.id == id));
-    await _notesService.delete(id);
+    try {
+      await _notesService.delete(id);
+    } catch (e) {
+      // Roll back the optimistic UI update if the delete didn't
+      // actually persist, so the list doesn't silently drift out of
+      // sync with what's stored on disk.
+      if (mounted) {
+        setState(() => _notes.insert(removedIndex, removed));
+        _showSnackBar('Could not delete that insight. Please try again.');
+      }
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   List<DashboardNote> get _filteredNotes {

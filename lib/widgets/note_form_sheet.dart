@@ -84,9 +84,9 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: Form(
@@ -120,9 +120,15 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
                   labelText: 'Title',
                   hintText: 'e.g. Rural internet gap',
                   border: OutlineInputBorder(),
+                  counterText: '',
                 ),
-                validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Title is required' : null,
+                maxLength: 60,
+                validator: (v) {
+                  final trimmed = v?.trim() ?? '';
+                  if (trimmed.isEmpty) return 'Title is required';
+                  if (trimmed.length > 60) return 'Title is too long';
+                  return null;
+                },
                 textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 12),
@@ -146,7 +152,9 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
                   labelText: 'Highlight value (optional)',
                   hintText: 'e.g. 95.4% or Selangor',
                   border: OutlineInputBorder(),
+                  counterText: '',
                 ),
+                maxLength: 24,
                 textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 12),
@@ -158,6 +166,7 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
                   border: OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
+                maxLength: 500,
                 minLines: 3,
                 maxLines: 5,
               ),
