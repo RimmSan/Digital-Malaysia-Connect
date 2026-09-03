@@ -41,10 +41,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
     _loadData();
   }
 
-  // ============================================================
-  // LOAD STATE DATA
-  // ============================================================
-
   Future<void> _loadData() async {
     try {
       final populationData =
@@ -90,10 +86,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
     }
   }
 
-  // ============================================================
-  // GET LATEST RECORD
-  // ============================================================
-
   StatePopulationData? _getLatestRecord(String state) {
     final records = _allPopulationData
         .where(
@@ -111,10 +103,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
 
     return records.first;
   }
-
-  // ============================================================
-  // GET PREVIOUS YEAR RECORD
-  // ============================================================
 
   StatePopulationData? _getPreviousYearRecord(
       String state,
@@ -135,10 +123,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
     return records.first;
   }
 
-  // ============================================================
-  // CALCULATE GROWTH
-  // ============================================================
-
   double? _calculateGrowth(
       StatePopulationData latest,
       StatePopulationData? previous,
@@ -153,10 +137,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
         100;
   }
 
-  // ============================================================
-  // GET RANKING
-  // ============================================================
-
   int _getRanking(String state) {
     final index = _latestStates.indexWhere(
           (record) => record.state == state,
@@ -169,10 +149,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
     return index + 1;
   }
 
-  // ============================================================
-  // FORMAT POPULATION
-  // ============================================================
-
   String _formatPopulation(double population) {
     if (population >= 1000) {
       return '${(population / 1000).toStringAsFixed(2)}M';
@@ -180,10 +156,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
 
     return '${population.toStringAsFixed(1)}K';
   }
-
-  // ============================================================
-  // FORMAT GROWTH
-  // ============================================================
 
   String _formatGrowth(double? growth) {
     if (growth == null) {
@@ -193,10 +165,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
     return '${growth >= 0 ? '+' : ''}'
         '${growth.toStringAsFixed(2)}%';
   }
-
-  // ============================================================
-  // COMPARE STATES
-  // ============================================================
 
   void _compareStates() {
     if (_stateA == null || _stateB == null) {
@@ -257,10 +225,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
     });
   }
 
-  // ============================================================
-  // FORCE DISMISS SNACKBAR
-  // ============================================================
-
   void _forceDismissSnackBar() {
     Future.delayed(
       const Duration(seconds: 3),
@@ -271,10 +235,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
       },
     );
   }
-
-  // ============================================================
-  // BUILD COMPARISON INSIGHT
-  // ============================================================
 
   String _buildInsight(
       StatePopulationData a,
@@ -303,10 +263,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
         '$betterRankState ranks higher nationally '
         'by population.';
   }
-
-  // ============================================================
-  // SAVE COMPARISON REPORT
-  // ============================================================
 
   Future<void> _saveComparisonReport({
     required StatePopulationData stateA,
@@ -340,10 +296,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
     try {
       final existingReports =
       await _reportsService.getAll();
-
-      // ========================================================
-      // DUPLICATE CHECK
-      // ========================================================
 
       final duplicateExists = existingReports.any(
             (report) {
@@ -380,10 +332,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
         return;
       }
 
-      // ========================================================
-      // MAXIMUM 50 REPORTS
-      // ========================================================
-
       if (existingReports.length >= _maxSavedReports) {
         if (!mounted) return;
 
@@ -401,10 +349,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
         _forceDismissSnackBar();
         return;
       }
-
-      // ========================================================
-      // CREATE REPORT
-      // ========================================================
 
       final now = DateTime.now();
 
@@ -432,10 +376,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
 
       if (!mounted) return;
 
-      // ========================================================
-      // SUCCESS SNACKBAR
-      // ========================================================
-
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -461,9 +401,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
         ),
       );
 
-      // IMPORTANT:
-      // We manually dismiss it instead of relying on
-      // SnackBar.duration.
       _forceDismissSnackBar();
     } catch (e) {
       if (!mounted) return;
@@ -488,10 +425,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
       }
     }
   }
-
-  // ============================================================
-  // UI
-  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -637,10 +570,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
 
           const SizedBox(height: 20),
 
-          // ====================================================
-          // STATE A
-          // ====================================================
-
           _StateSelector(
             label: 'State A',
             value: _stateA,
@@ -656,9 +585,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
 
           const SizedBox(height: 12),
 
-          // ====================================================
-          // COMPARISON ICON
-          // ====================================================
 
           Center(
             child: Container(
@@ -681,10 +607,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
 
           const SizedBox(height: 12),
 
-          // ====================================================
-          // STATE B
-          // ====================================================
-
           _StateSelector(
             label: 'State B',
             value: _stateB,
@@ -699,10 +621,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
           ),
 
           const SizedBox(height: 18),
-
-          // ====================================================
-          // COMPARE BUTTON
-          // ====================================================
 
           SizedBox(
             width: double.infinity,
@@ -727,10 +645,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
               ),
             ),
           ),
-
-          // ====================================================
-          // COMPARISON RESULT
-          // ====================================================
 
           if (_showComparison &&
               latestA != null &&
@@ -788,11 +702,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
             ),
 
             const SizedBox(height: 18),
-
-            // ==================================================
-            // COMPARISON INSIGHT
-            // ==================================================
-
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -845,11 +754,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
             ),
 
             const SizedBox(height: 14),
-
-            // ==================================================
-            // SAVE REPORT BUTTON
-            // ==================================================
-
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -903,9 +807,6 @@ class _StateComparisonPageState extends State<StateComparisonPage> {
   }
 }
 
-// ============================================================
-// STATE SELECTOR
-// ============================================================
 
 class _StateSelector extends StatelessWidget {
   final String label;
@@ -950,9 +851,6 @@ class _StateSelector extends StatelessWidget {
   }
 }
 
-// ============================================================
-// COMPARISON CARD
-// ============================================================
 
 class _ComparisonCard extends StatelessWidget {
   final String state;
@@ -1037,10 +935,6 @@ class _ComparisonCard extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// COMPARISON VALUE
-// ============================================================
 
 class _ComparisonValue extends StatelessWidget {
   final String label;

@@ -11,6 +11,22 @@ class GrowthHeroCard extends StatelessWidget {
     required this.yoyGrowthPercent,
   });
 
+  static String _formatCount(num value) {
+    final isNegative = value < 0;
+    final abs = value.abs();
+
+    String formatted;
+    if (abs >= 1000000) {
+      formatted = '${(abs / 1000000).toStringAsFixed(2)}M';
+    } else if (abs >= 1000) {
+      formatted = '${(abs / 1000).toStringAsFixed(1)}K';
+    } else {
+      formatted = abs.toStringAsFixed(0);
+    }
+
+    return isNegative ? '-$formatted' : formatted;
+  }
+
   @override
   Widget build(BuildContext context) {
     final yoyLabel =
@@ -45,7 +61,7 @@ class GrowthHeroCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                '${(currentTotal / 1000000).toStringAsFixed(2)}M',
+                _formatCount(currentTotal),
                 style: const TextStyle(
                     color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold),
               ),

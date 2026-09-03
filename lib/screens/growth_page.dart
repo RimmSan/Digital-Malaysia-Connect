@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/domain_data.dart';
 import '../models/growth_bookmark.dart';
+import '../models/population_data.dart';
 import '../services/api_service.dart';
 import '../services/growth_bookmark_service.dart';
 import '../theme/app_colors.dart';
@@ -25,6 +26,7 @@ class _GrowthPageState extends State<GrowthPage> {
 
   List<DomainData> _domainData = [];
   List<GrowthBookmark> _bookmarks = [];
+  List<PopulationData> _population = [];
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -32,7 +34,7 @@ class _GrowthPageState extends State<GrowthPage> {
   GrowthView _view = GrowthView.yearly;
   String? _selectedBookmarkId;
 
-  static const int _maxBookmarks = 6;
+  static const int _maxBookmarks = 10;
 
   @override
   void initState() {
@@ -41,20 +43,16 @@ class _GrowthPageState extends State<GrowthPage> {
     _loadBookmarks();
   }
 
-  // ============================================================
-  // DATA
-  // ============================================================
-
   Future<void> _loadData() async {
     try {
-      // IMPORTANT:
-      // Growth Tracker uses the complete historical dataset.
       final data = await _apiService.getDomainsFullHistory();
+      final population = await _apiService.getPopulation();
 
       if (!mounted) return;
 
       setState(() {
         _domainData = data;
+        _population = population;
         _isLoading = false;
         _errorMessage = null;
       });
@@ -80,25 +78,19 @@ class _GrowthPageState extends State<GrowthPage> {
     });
   }
 
-  // ============================================================
-  // DATA AGGREGATION
-  // ============================================================
-
-  // Only the pre-computed cumulative totals for "overall" (all TLDs
-  // combined). The raw dataset also contains per-TLD rows (.com.my,
-  // .net.my, ...) and a "new_net" series (monthly deltas) — mixing
-  // those into a sum would double count and produce meaningless totals.
   List<DomainData> get _overallCumulative {
     final filtered = _domainData
-        .where((d) => d.series == 'cumulative' && d.domain == 'overall')
+        .where(
+          (d) =>
+      d.series == 'cumulative' &&
+          d.domain == 'overall',
+    )
         .toList()
       ..sort((a, b) => a.date.compareTo(b.date));
 
     return filtered;
   }
 
-  // Latest cumulative reading per year (not summed — each row is
-  // already a running total as of that month).
   Map<int, int> get _cumulativeByYear {
     final result = <int, int>{};
 
@@ -109,7 +101,6 @@ class _GrowthPageState extends State<GrowthPage> {
     return result;
   }
 
-  // Latest cumulative reading per month.
   Map<int, int> get _cumulativeByMonth {
     final result = <int, int>{};
 
@@ -120,10 +111,6 @@ class _GrowthPageState extends State<GrowthPage> {
 
     return result;
   }
-
-  // ============================================================
-  // CURRENT TOTAL
-  // ============================================================
 
   int get _currentTotal {
     final cumulative = _cumulativeByYear;
@@ -136,10 +123,6 @@ class _GrowthPageState extends State<GrowthPage> {
 
     return cumulative[years.last]!;
   }
-
-  // ============================================================
-  // GROWTH CALCULATION FUNCTION
-  // ============================================================
 
   double calculateGrowth(int current, int previous) {
     if (previous == 0) return 0;
@@ -158,10 +141,6 @@ class _GrowthPageState extends State<GrowthPage> {
 
     return calculateGrowth(current, previous);
   }
-
-  // ============================================================
-  // GROWTH PERFORMANCE SUMMARY
-  // ============================================================
 
   double get _highestGrowth {
     final data = _cumulativeByYear;
@@ -234,15 +213,42 @@ class _GrowthPageState extends State<GrowthPage> {
     return 'Stable';
   }
 
-  // ============================================================
-  // CRUD: CREATE
-  // ============================================================
+  double? get _currentPopulation {
+    if (_population.isEmpty) return null;
+
+    final latestDate = _population
+        .map((d) => d.date)
+        .reduce(
+          (a, b) => a.isAfter(b) ? a : b,
+    );
+
+    final sameDate = _population
+        .where((d) => d.date == latestDate)
+        .toList();
+
+    final overallRows = sameDate.where(
+          (d) =>
+      d.age.toLowerCase() == 'overall' &&
+          d.sex.toLowerCase() == 'both' &&
+          d.ethnicity.toLowerCase() == 'overall',
+    );
+
+    final value = overallRows.isNotEmpty
+        ? overallRows.first.population
+        : sameDate
+        .map((d) => d.population)
+        .reduce(
+          (a, b) => a > b ? a : b,
+    );
+
+    return value * 1000;
+  }
 
   Future<void> _saveSnapshot() async {
     if (_bookmarks.length >= _maxBookmarks) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('You can save up to 6 bookmarks only.'),
+          content: Text('You can save up to 10 bookmarks only.'),
         ),
       );
       return;
@@ -260,7 +266,8 @@ class _GrowthPageState extends State<GrowthPage> {
             left: 20,
             right: 20,
             top: 20,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+            bottom:
+            MediaQuery.of(sheetContext).viewInsets.bottom + 20,
           ),
           child: Form(
             key: formKey,
@@ -275,38 +282,35 @@ class _GrowthPageState extends State<GrowthPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
                   'Current total: ${_formatNumber(_currentTotal)} registrations',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color:
+                    Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 13,
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 TextFormField(
                   controller: labelController,
                   maxLength: 15,
                   decoration: const InputDecoration(
                     labelText: 'Snapshot Name',
-                    hintText: 'e.g. Semester Start',
+                    hintText: 'Enter snapshot label',
                     border: OutlineInputBorder(),
                   ),
                   validator: _validateLabel,
                 ),
-
                 const SizedBox(height: 16),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 15,
+                      ),
                     ),
                     onPressed: () async {
                       if (!formKey.currentState!.validate()) {
@@ -348,16 +352,11 @@ class _GrowthPageState extends State<GrowthPage> {
     );
   }
 
-  // ============================================================
-  // CRUD: UPDATE
-  // ============================================================
-
   Future<void> _editBookmark(GrowthBookmark bookmark) async {
     final labelController =
     TextEditingController(text: bookmark.label);
 
-    final valueController =
-    TextEditingController(
+    final valueController = TextEditingController(
       text: bookmark.snapshotValue.toString(),
     );
 
@@ -372,7 +371,8 @@ class _GrowthPageState extends State<GrowthPage> {
             left: 20,
             right: 20,
             top: 20,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+            bottom:
+            MediaQuery.of(sheetContext).viewInsets.bottom + 20,
           ),
           child: Form(
             key: formKey,
@@ -387,9 +387,7 @@ class _GrowthPageState extends State<GrowthPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 TextFormField(
                   controller: labelController,
                   maxLength: 15,
@@ -397,15 +395,12 @@ class _GrowthPageState extends State<GrowthPage> {
                     labelText: 'Snapshot Name',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) =>
-                      _validateLabel(
-                        value,
-                        excludingId: bookmark.id,
-                      ),
+                  validator: (value) => _validateLabel(
+                    value,
+                    excludingId: bookmark.id,
+                  ),
                 ),
-
                 const SizedBox(height: 16),
-
                 TextFormField(
                   controller: valueController,
                   keyboardType: TextInputType.number,
@@ -415,15 +410,15 @@ class _GrowthPageState extends State<GrowthPage> {
                   ),
                   validator: _validateValue,
                 ),
-
                 const SizedBox(height: 16),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                      ),
                     ),
                     onPressed: () async {
                       if (!formKey.currentState!.validate()) {
@@ -464,13 +459,9 @@ class _GrowthPageState extends State<GrowthPage> {
     );
   }
 
-  // ============================================================
-  // CRUD: DELETE
-  // ============================================================
-
   Future<void> _deleteBookmark(
-      GrowthBookmark bookmark) async {
-
+      GrowthBookmark bookmark,
+      ) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -506,10 +497,6 @@ class _GrowthPageState extends State<GrowthPage> {
       await _loadBookmarks();
     }
   }
-
-  // ============================================================
-  // VALIDATION
-  // ============================================================
 
   String? _validateLabel(
       String? value, {
@@ -550,23 +537,14 @@ class _GrowthPageState extends State<GrowthPage> {
       return 'Value must be greater than 0';
     }
 
-    // Sanity ceiling: a .my domain registration count can never realistically
-    // exceed Malaysia's total population (~34.39M as of the latest dataset).
-    // This still allows values higher than the current registration total
-    // (for testing decline scenarios), while blocking obviously invalid
-    // input like accidental extra zeros.
-    const maxPlausibleValue = 50000000; // 50M — population + safety margin
+    final population = _currentPopulation;
 
-    if (parsed > maxPlausibleValue) {
+    if (population != null && parsed > population) {
       return 'Value seems unrealistic (exceeds Malaysia\'s population)';
     }
 
     return null;
   }
-
-  // ============================================================
-  // BOOKMARK COMPARISON
-  // ============================================================
 
   void _toggleCompare(String bookmarkId) {
     setState(() {
@@ -576,10 +554,6 @@ class _GrowthPageState extends State<GrowthPage> {
           : bookmarkId;
     });
   }
-
-  // ============================================================
-  // FORMAT NUMBER
-  // ============================================================
 
   String _formatNumber(int value) {
     if (value >= 1000000) {
@@ -592,10 +566,6 @@ class _GrowthPageState extends State<GrowthPage> {
 
     return value.toString();
   }
-
-  // ============================================================
-  // BUILD
-  // ============================================================
 
   @override
   Widget build(BuildContext context) {
@@ -638,8 +608,7 @@ class _GrowthPageState extends State<GrowthPage> {
       );
     }
 
-    final cumulative =
-    _view == GrowthView.yearly
+    final cumulative = _view == GrowthView.yearly
         ? _cumulativeByYear
         : _cumulativeByMonth;
 
@@ -655,16 +624,11 @@ class _GrowthPageState extends State<GrowthPage> {
           32,
         ),
         children: [
-
-          // HERO
           GrowthHeroCard(
             currentTotal: _currentTotal,
             yoyGrowthPercent: _yoyGrowthPercent,
           ),
-
           const SizedBox(height: 24),
-
-          // VIEW SELECTOR
           GrowthViewToggle(
             selected: _view,
             onChanged: (value) {
@@ -673,10 +637,7 @@ class _GrowthPageState extends State<GrowthPage> {
               });
             },
           ),
-
           const SizedBox(height: 24),
-
-          // GRAPH TITLE
           const Text(
             'Domain Registration Growth',
             style: TextStyle(
@@ -684,27 +645,20 @@ class _GrowthPageState extends State<GrowthPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 4),
-
           Text(
             _view == GrowthView.yearly
                 ? 'Yearly cumulative registrations'
                 : 'Monthly cumulative registrations',
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color:
+              Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-
           const SizedBox(height: 14),
-
-          // GRAPH
           _buildGrowthChart(cumulative, keys),
-
           const SizedBox(height: 24),
-
-          // STATISTICS
           Row(
             children: [
               Expanded(
@@ -717,9 +671,7 @@ class _GrowthPageState extends State<GrowthPage> {
                   color: AppColors.success,
                 ),
               ),
-
               const SizedBox(width: 12),
-
               Expanded(
                 child: GrowthStatTile(
                   icon: Icons.public,
@@ -730,15 +682,9 @@ class _GrowthPageState extends State<GrowthPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 24),
-
-          // PERFORMANCE SUMMARY
           _buildPerformanceSummary(),
-
           const SizedBox(height: 28),
-
-          // BOOKMARK HEADER
           Row(
             children: [
               const Text(
@@ -748,9 +694,7 @@ class _GrowthPageState extends State<GrowthPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const Spacer(),
-
               TextButton.icon(
                 onPressed: _saveSnapshot,
                 icon: const Icon(
@@ -761,9 +705,7 @@ class _GrowthPageState extends State<GrowthPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
           if (_bookmarks.isEmpty)
             _buildEmptyBookmarks()
           else
@@ -773,28 +715,18 @@ class _GrowthPageState extends State<GrowthPage> {
                 currentTotal: _currentTotal,
                 isSelected:
                 _selectedBookmarkId == bookmark.id,
-                onTap: () =>
-                    _toggleCompare(bookmark.id),
-                onEdit: () =>
-                    _editBookmark(bookmark),
-                onDelete: () =>
-                    _deleteBookmark(bookmark),
+                onTap: () => _toggleCompare(bookmark.id),
+                onEdit: () => _editBookmark(bookmark),
+                onDelete: () => _deleteBookmark(bookmark),
               ),
             ),
-
           const SizedBox(height: 20),
-
           const DataSourceLabel(),
-
           const SizedBox(height: 20),
         ],
       ),
     );
   }
-
-  // ============================================================
-  // CHART
-  // ============================================================
 
   Widget _buildGrowthChart(
       Map<int, int> cumulative,
@@ -825,8 +757,6 @@ class _GrowthPageState extends State<GrowthPage> {
     final padding = (maxY - minY) * 0.15;
 
     return Container(
-      // Bigger box + more internal breathing room so axis labels
-      // and the curve itself aren't cramped.
       height: 340,
       padding: const EdgeInsets.fromLTRB(
         8,
@@ -849,20 +779,20 @@ class _GrowthPageState extends State<GrowthPage> {
       ),
       child: LineChart(
         LineChartData(
-          minY: (minY - padding).clamp(0, double.infinity),
+          minY: (minY - padding).clamp(
+            0,
+            double.infinity,
+          ),
           maxY: maxY + padding,
-
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
             horizontalInterval:
             maxY > 0 ? maxY / 4 : 1,
           ),
-
           borderData: FlBorderData(
             show: false,
           ),
-
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
@@ -873,25 +803,24 @@ class _GrowthPageState extends State<GrowthPage> {
                     _formatNumber(value.toInt()),
                     style: TextStyle(
                       fontSize: 11,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant,
                     ),
                   );
                 },
               ),
             ),
-
             rightTitles: const AxisTitles(
               sideTitles: SideTitles(
                 showTitles: false,
               ),
             ),
-
             topTitles: const AxisTitles(
               sideTitles: SideTitles(
                 showTitles: false,
               ),
             ),
-
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -911,22 +840,22 @@ class _GrowthPageState extends State<GrowthPage> {
 
                   if (_view == GrowthView.yearly) {
                     return Padding(
-                      padding:
-                      const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.only(
+                        top: 10,
+                      ),
                       child: Text(
                         key.toString(),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant,
                         ),
                       ),
                     );
                   }
 
-                  // Monthly view: only label January of each
-                  // year, so the axis always reads clean years
-                  // instead of drifting months.
                   final month = key % 100;
 
                   if (month != 1) {
@@ -936,14 +865,17 @@ class _GrowthPageState extends State<GrowthPage> {
                   final year = key ~/ 100;
 
                   return Padding(
-                    padding:
-                    const EdgeInsets.only(top: 10),
+                    padding: const EdgeInsets.only(
+                      top: 10,
+                    ),
                     child: Text(
                       year.toString(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant,
                       ),
                     ),
                   );
@@ -951,88 +883,62 @@ class _GrowthPageState extends State<GrowthPage> {
               ),
             ),
           ),
-
           lineTouchData: LineTouchData(
             handleBuiltInTouches: true,
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (_) => Colors.black87,
+              getTooltipItems: (touchedSpots) {
+                return touchedSpots.map((spot) {
+                  final index = spot.x.round();
 
-            touchTooltipData:
-            LineTouchTooltipData(
-              getTooltipColor:
-                  (_) => Colors.black87,
+                  if (index < 0 ||
+                      index >= keys.length) {
+                    return null;
+                  }
 
-              getTooltipItems:
-                  (touchedSpots) {
-                return touchedSpots.map(
-                      (spot) {
-                    final index =
-                    spot.x.round();
+                  final key = keys[index];
 
-                    if (index < 0 ||
-                        index >= keys.length) {
-                      return null;
-                    }
+                  String period;
 
-                    final key =
-                    keys[index];
+                  if (_view == GrowthView.yearly) {
+                    period = key.toString();
+                  } else {
+                    final month = key % 100;
+                    final year = key ~/ 100;
+                    period =
+                    '${_monthName(month)} $year';
+                  }
 
-                    String period;
-
-                    if (_view ==
-                        GrowthView.yearly) {
-                      period =
-                          key.toString();
-                    } else {
-                      final month =
-                          key % 100;
-
-                      final year =
-                          key ~/ 100;
-
-                      period =
-                      '${_monthName(month)} $year';
-                    }
-
-                    return LineTooltipItem(
-                      '$period\n'
-                          '${_formatNumber(spot.y.toInt())} registrations',
-                      const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight:
-                        FontWeight.w600,
-                      ),
-                    );
-                  },
-                ).toList();
+                  return LineTooltipItem(
+                    '$period\n'
+                        '${_formatNumber(spot.y.toInt())} registrations',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  );
+                }).toList();
               },
             ),
           ),
-
           lineBarsData: [
             LineChartBarData(
               isCurved: true,
               barWidth: 3,
               color: AppColors.primary,
-
               isStrokeCapRound: true,
-
               dotData: FlDotData(
                 show: keys.length <= 12,
               ),
-
-              belowBarData:
-              BarAreaData(
+              belowBarData: BarAreaData(
                 show: true,
               ),
-
               spots: [
-                for (int i = 0;
-                i < keys.length;
-                i++)
+                for (int i = 0; i < keys.length; i++)
                   FlSpot(
                     i.toDouble(),
-                    cumulative[keys[i]]!
-                        .toDouble(),
+                    cumulative[keys[i]]!.toDouble(),
                   ),
               ],
             ),
@@ -1071,10 +977,6 @@ class _GrowthPageState extends State<GrowthPage> {
     return months[month - 1];
   }
 
-  // ============================================================
-  // PERFORMANCE SUMMARY UI
-  // ============================================================
-
   Widget _buildPerformanceSummary() {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -1102,9 +1004,7 @@ class _GrowthPageState extends State<GrowthPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 16),
-
           Row(
             children: [
               Expanded(
@@ -1115,7 +1015,6 @@ class _GrowthPageState extends State<GrowthPage> {
                   AppColors.success,
                 ),
               ),
-
               Expanded(
                 child: _performanceItem(
                   'Lowest Growth',
@@ -1126,9 +1025,7 @@ class _GrowthPageState extends State<GrowthPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 18),
-
           Row(
             children: [
               Expanded(
@@ -1139,7 +1036,6 @@ class _GrowthPageState extends State<GrowthPage> {
                   AppColors.primary,
                 ),
               ),
-
               Expanded(
                 child: _performanceItem(
                   'Current Status',
@@ -1170,9 +1066,7 @@ class _GrowthPageState extends State<GrowthPage> {
           size: 18,
           color: color,
         ),
-
         const SizedBox(width: 8),
-
         Expanded(
           child: Column(
             crossAxisAlignment:
@@ -1182,12 +1076,12 @@ class _GrowthPageState extends State<GrowthPage> {
                 label,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant,
                 ),
               ),
-
               const SizedBox(height: 4),
-
               Text(
                 value,
                 style: TextStyle(
@@ -1214,7 +1108,9 @@ class _GrowthPageState extends State<GrowthPage> {
           AppSpacing.cardRadius,
         ),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
+          color: Theme.of(context)
+              .colorScheme
+              .outlineVariant,
         ),
       ),
       child: Column(
@@ -1222,26 +1118,26 @@ class _GrowthPageState extends State<GrowthPage> {
           Icon(
             Icons.bookmark_border,
             size: 36,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: Theme.of(context)
+                .colorScheme
+                .onSurfaceVariant,
           ),
-
           const SizedBox(height: 10),
-
           const Text(
             'No growth snapshots yet',
             style: TextStyle(
               fontWeight: FontWeight.w600,
             ),
           ),
-
           const SizedBox(height: 4),
-
           Text(
             'Save a snapshot to compare future growth.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant,
             ),
           ),
         ],

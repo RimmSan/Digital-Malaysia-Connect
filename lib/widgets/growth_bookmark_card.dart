@@ -20,6 +20,22 @@ class GrowthBookmarkCard extends StatelessWidget {
     required this.onDelete,
   });
 
+  static String _formatCount(num value) {
+    final isNegative = value < 0;
+    final abs = value.abs();
+
+    String formatted;
+    if (abs >= 1000000) {
+      formatted = '${(abs / 1000000).toStringAsFixed(2)}M';
+    } else if (abs >= 1000) {
+      formatted = '${(abs / 1000).toStringAsFixed(1)}K';
+    } else {
+      formatted = abs.toStringAsFixed(0);
+    }
+
+    return isNegative ? '-$formatted' : formatted;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -53,7 +69,7 @@ class GrowthBookmarkCard extends StatelessWidget {
                         Text(bookmark.label,
                             style: const TextStyle(fontWeight: FontWeight.w600)),
                         Text(
-                          '${(bookmark.snapshotValue / 1000000).toStringAsFixed(2)}M · '
+                          '${_formatCount(bookmark.snapshotValue)} · '
                               '${bookmark.savedAt.day}/${bookmark.savedAt.month}/${bookmark.savedAt.year}',
                           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                         ),
@@ -106,7 +122,7 @@ class GrowthBookmarkCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '${isPositive ? '+' : ''}${(diff / 1000000).toStringAsFixed(2)}M '
+            '${isPositive ? '+' : ''}${_formatCount(diff)} '
                 '(${isPositive ? '+' : ''}${percent.toStringAsFixed(1)}%) since '
                 '${bookmark.savedAt.day}/${bookmark.savedAt.month}/${bookmark.savedAt.year}',
             style: TextStyle(

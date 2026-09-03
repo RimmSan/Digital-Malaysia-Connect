@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../services/intelligence_reports_service.dart';
 import 'state_comparison_page.dart';
 import 'saved_intelligence_reports_page.dart';
+import '../widgets/data_source_label.dart';
 
 class IntelligencePage extends StatefulWidget {
   const IntelligencePage({super.key});
@@ -1165,6 +1166,10 @@ class _IntelligencePageState extends State<IntelligencePage> {
               );
             },
           ),
+
+          const SizedBox(height: 8),
+          const DataSourceLabel(),
+          const SizedBox(height: 24),
         ],
       ),
     );

@@ -12,6 +12,7 @@ import '../models/internet_penetration_data.dart';
 import '../models/watchlist_alert.dart';
 import '../utils/trend_predictor.dart';
 import '../utils/chart_exporter.dart';
+import '../widgets/data_source_label.dart';
 
 enum _ChartStyle { line, bar }
 
@@ -512,6 +513,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     );
                   },
                 ),
+
+              const SizedBox(height: 8),
+              const Center(
+                child: DataSourceLabel(),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
