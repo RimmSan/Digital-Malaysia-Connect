@@ -88,7 +88,12 @@ class _DashboardPageState extends State<DashboardPage> {
       });
 
       final results = await Future.wait([
-        _apiService.getDomains(),
+        // Use the same full-history source as the Growth Tracker so
+        // both trend charts show identical data. getDomains() only
+        // returns the newest 100 raw rows (~4-5 dates after
+        // filtering), which made this sparkline show a nearly-flat
+        // recent sliver instead of the actual growth curve.
+        _apiService.getDomainsFullHistory(),
         _apiService.getPopulation(),
         _apiService.getInternetPenetration(),
         _apiService.getStatePopulation(),

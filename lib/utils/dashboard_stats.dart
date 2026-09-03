@@ -31,19 +31,22 @@ class DashboardStats {
   // ------------------------------------------------------------
   // .MY domain registrations: total registrations on the most
   // recent date present in the dataset.
+  //
+  // The domains dataset carries multiple rows per date: split by
+  // series ('cumulative' vs 'new_net') AND by domain ('overall'
+  // plus each individual TLD like .com.my, .net.my, etc). Summing
+  // every row at a date massively overcounts (~2x from double
+  // series, further inflated by TLD breakdown rows on top of the
+  // 'overall' row that already totals them). Must filter to
+  // series == 'cumulative' && domain == 'overall' - the single
+  // row that already represents the true running total.
   // ------------------------------------------------------------
   static String domainRegistrations(List<DomainData> data) {
-    if (data.isEmpty) return '--';
+    final filtered = _overallCumulativeDomains(data);
+    if (filtered.isEmpty) return '--';
 
-    final latestDate = data
-        .map((d) => d.date)
-        .reduce((a, b) => a.isAfter(b) ? a : b);
-
-    final total = data
-        .where((d) => d.date == latestDate)
-        .fold<int>(0, (sum, d) => sum + d.registrations);
-
-    return formatCompact(total.toDouble());
+    final latest = _latestByDate(filtered, (d) => d.date);
+    return formatCompact(latest.registrations.toDouble());
   }
 
   // ------------------------------------------------------------
@@ -139,18 +142,29 @@ class DashboardStats {
 
   // ------------------------------------------------------------
   // Total .MY domain registrations per date, oldest to newest -
-  // feeds the dashboard's trend sparkline.
+  // feeds the dashboard's trend sparkline. Same series/domain
+  // filter as domainRegistrations() above - each date should
+  // contribute exactly one (already-cumulative) value, not a sum
+  // of every series/TLD row at that date.
   // ------------------------------------------------------------
   static List<double> domainRegistrationsTrend(List<DomainData> data) {
-    if (data.isEmpty) return [];
+    final filtered = _overallCumulativeDomains(data);
+    if (filtered.isEmpty) return [];
 
-    final Map<DateTime, int> totalsByDate = {};
-    for (final d in data) {
-      totalsByDate[d.date] = (totalsByDate[d.date] ?? 0) + d.registrations;
-    }
+    final sorted = [...filtered]..sort((a, b) => a.date.compareTo(b.date));
+    return sorted.map((d) => d.registrations.toDouble()).toList();
+  }
 
-    final sortedDates = totalsByDate.keys.toList()..sort();
-    return sortedDates.map((d) => totalsByDate[d]!.toDouble()).toList();
+  // ------------------------------------------------------------
+  // Filters the raw domains dataset down to the single row per
+  // date that represents the true running total: the cumulative
+  // series' "overall" domain row (as opposed to new_net series or
+  // individual TLD breakdown rows like .com.my, .gov.my, etc).
+  // ------------------------------------------------------------
+  static List<DomainData> _overallCumulativeDomains(List<DomainData> data) {
+    return data
+        .where((d) => d.series == 'cumulative' && d.domain == 'overall')
+        .toList();
   }
 
   static const List<String> _monthAbbr = [
