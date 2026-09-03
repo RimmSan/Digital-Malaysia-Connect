@@ -9,21 +9,11 @@ import '../models/internet_penetration_data.dart';
 import '../models/state_population_data.dart';
 
 class ApiService {
-  // sort=-date : without this, the API was returning records in an
-  // undefined/oldest-first order. With limit=100 and no sort, we were
-  // getting the OLDEST 100 records instead of the newest - which is why
-  // "Recent Dataset Updates" was showing dates that were decades stale.
-  // (Confirmed against data.gov.my's official Request Query docs:
-  // https://developer.data.gov.my/request-query)
   static const String domainsUrl =
       'https://api.data.gov.my/data-catalogue?id=domains&limit=100&sort=-date';
 
   static const String populationUrl =
       'https://api.data.gov.my/data-catalogue?id=population_malaysia&limit=100&sort=-date';
-
-  // ============================================================
-  // GET .MY DOMAIN DATA (most recent — used for dashboard/updates)
-  // ============================================================
 
   Future<List<DomainData>> getDomains() async {
     final response = await http.get(Uri.parse(domainsUrl));
@@ -37,10 +27,6 @@ class ApiService {
     final jsonData = _decodeAsList(response.body, 'domain data');
     return _parseList(jsonData, DomainData.fromJson, 'domain');
   }
-
-  // ============================================================
-  // GET .MY DOMAIN DATA (full history — used for Growth Tracker chart)
-  // ============================================================
 
   Future<List<DomainData>> getDomainsFullHistory() async {
     final url = Uri.parse(
@@ -68,9 +54,6 @@ class ApiService {
 
     return records;
   }
-  // ============================================================
-  // GET MALAYSIA POPULATION DATA (national level)
-  // ============================================================
 
   Future<List<PopulationData>> getPopulation() async {
     final response = await http.get(Uri.parse(populationUrl));
@@ -85,9 +68,6 @@ class ApiService {
     return _parseList(jsonData, PopulationData.fromJson, 'population');
   }
 
-  // ============================================================
-  // GET INTERNET PENETRATION DATA (bundled asset)
-  // ============================================================
 
   Future<List<InternetPenetrationData>> getInternetPenetration() async {
     final String jsonString =
@@ -101,9 +81,6 @@ class ApiService {
     );
   }
 
-  // ============================================================
-  // GET STATE-LEVEL POPULATION DATA (bundled asset)
-  // ============================================================
 
   Future<List<StatePopulationData>> getStatePopulation() async {
     final String jsonString =
@@ -117,9 +94,6 @@ class ApiService {
     );
   }
 
-  // ============================================================
-  // INPUT VALIDATION HELPERS
-  // ============================================================
 
   List<dynamic> _decodeAsList(String body, String label) {
     final decoded = jsonDecode(body);

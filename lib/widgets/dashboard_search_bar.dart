@@ -2,15 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/search_result_item.dart';
 import '../theme/app_colors.dart';
 
-// ============================================================
-// DASHBOARD SEARCH BAR
-// ------------------------------------------------------------
-// Renders the search TextField plus a results panel underneath
-// it when there's a query and matches. The actual searching
-// (matching states/metrics/datasets/insights) happens in
-// DashboardPage since it owns the data; this widget only
-// displays whatever results list it's given.
-// ============================================================
 
 class DashboardSearchBar extends StatelessWidget {
   final TextEditingController controller;

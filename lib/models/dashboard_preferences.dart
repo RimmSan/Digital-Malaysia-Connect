@@ -1,11 +1,3 @@
-// ============================================================
-// DASHBOARD PREFERENCES MODEL
-// ------------------------------------------------------------
-// Backs the "Customize Dashboard" personalization feature - lets
-// the user show/hide individual dashboard stat cards & sections.
-// Persisted locally, separate from DashboardNote (My Insights).
-// ============================================================
-
 class DashboardPreferences {
   bool showInternetCard;
   bool showDomainsCard;

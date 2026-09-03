@@ -2,13 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/dashboard_preferences.dart';
 import '../theme/app_colors.dart';
 
-// ============================================================
-// CUSTOMIZE DASHBOARD SHEET
-// ------------------------------------------------------------
-// Lets the user show/hide dashboard sections. Returns the updated
-// DashboardPreferences via Navigator.pop when saved, or null if
-// dismissed without saving.
-// ============================================================
 
 Future<DashboardPreferences?> showCustomizeDashboardSheet(
     BuildContext context, {

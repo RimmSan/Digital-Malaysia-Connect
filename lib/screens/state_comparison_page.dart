@@ -14,13 +14,10 @@ class StateComparisonPage extends StatefulWidget {
       _StateComparisonPageState();
 }
 
-class _StateComparisonPageState
-    extends State<StateComparisonPage> {
-  final ApiService _apiService =
-  ApiService();
+class _StateComparisonPageState extends State<StateComparisonPage> {
+  final ApiService _apiService = ApiService();
 
-  final IntelligenceReportsService
-  _reportsService =
+  final IntelligenceReportsService _reportsService =
   IntelligenceReportsService();
 
   bool _isLoading = true;
@@ -28,16 +25,15 @@ class _StateComparisonPageState
 
   String? _errorMessage;
 
-  List<StatePopulationData>
-  _allPopulationData = [];
-
-  List<StatePopulationData>
-  _latestStates = [];
+  List<StatePopulationData> _allPopulationData = [];
+  List<StatePopulationData> _latestStates = [];
 
   String? _stateA;
   String? _stateB;
 
   bool _showComparison = false;
+
+  static const int _maxSavedReports = 50;
 
   @override
   void initState() {
@@ -52,59 +48,33 @@ class _StateComparisonPageState
   Future<void> _loadData() async {
     try {
       final populationData =
-      await _apiService
-          .getStatePopulation();
+      await _apiService.getStatePopulation();
 
-      final Map<
-          String,
-          StatePopulationData>
-      latestByState = {};
+      final Map<String, StatePopulationData> latestByState = {};
 
-      for (final record
-      in populationData) {
-        final current =
-        latestByState[
-        record.state];
+      for (final record in populationData) {
+        final current = latestByState[record.state];
 
         if (current == null ||
-            record.date.isAfter(
-              current.date,
-            )) {
-          latestByState[
-          record.state] =
-              record;
+            record.date.isAfter(current.date)) {
+          latestByState[record.state] = record;
         }
       }
 
-      final latestStates =
-      latestByState.values
-          .toList()
+      final latestStates = latestByState.values.toList()
         ..sort(
-              (a, b) =>
-              b.population
-                  .compareTo(
-                a.population,
-              ),
+              (a, b) => b.population.compareTo(a.population),
         );
 
       if (!mounted) return;
 
       setState(() {
-        _allPopulationData =
-            populationData;
+        _allPopulationData = populationData;
+        _latestStates = latestStates;
 
-        _latestStates =
-            latestStates;
-
-        if (latestStates.length >=
-            2) {
-          _stateA =
-              latestStates[0]
-                  .state;
-
-          _stateB =
-              latestStates[1]
-                  .state;
+        if (latestStates.length >= 2) {
+          _stateA = latestStates[0].state;
+          _stateB = latestStates[1].state;
         }
 
         _errorMessage = null;
@@ -114,9 +84,7 @@ class _StateComparisonPageState
       if (!mounted) return;
 
       setState(() {
-        _errorMessage =
-            e.toString();
-
+        _errorMessage = e.toString();
         _isLoading = false;
       });
     }
@@ -126,16 +94,10 @@ class _StateComparisonPageState
   // GET LATEST RECORD
   // ============================================================
 
-  StatePopulationData?
-  _getLatestRecord(
-      String state,
-      ) {
-    final records =
-    _allPopulationData
+  StatePopulationData? _getLatestRecord(String state) {
+    final records = _allPopulationData
         .where(
-          (record) =>
-      record.state ==
-          state,
+          (record) => record.state == state,
     )
         .toList();
 
@@ -144,10 +106,7 @@ class _StateComparisonPageState
     }
 
     records.sort(
-          (a, b) =>
-          b.date.compareTo(
-            a.date,
-          ),
+          (a, b) => b.date.compareTo(a.date),
     );
 
     return records.first;
@@ -157,21 +116,16 @@ class _StateComparisonPageState
   // GET PREVIOUS YEAR RECORD
   // ============================================================
 
-  StatePopulationData?
-  _getPreviousYearRecord(
+  StatePopulationData? _getPreviousYearRecord(
       String state,
       StatePopulationData latest,
       ) {
-    final previousYear =
-        latest.date.year - 1;
+    final previousYear = latest.date.year - 1;
 
-    final records =
-    _allPopulationData.where(
+    final records = _allPopulationData.where(
           (record) =>
-      record.state ==
-          state &&
-          record.date.year ==
-              previousYear,
+      record.state == state &&
+          record.date.year == previousYear,
     );
 
     if (records.isEmpty) {
@@ -194,8 +148,7 @@ class _StateComparisonPageState
       return null;
     }
 
-    return ((latest.population -
-        previous.population) /
+    return ((latest.population - previous.population) /
         previous.population) *
         100;
   }
@@ -204,15 +157,9 @@ class _StateComparisonPageState
   // GET RANKING
   // ============================================================
 
-  int _getRanking(
-      String state,
-      ) {
-    final index =
-    _latestStates
-        .indexWhere(
-          (record) =>
-      record.state ==
-          state,
+  int _getRanking(String state) {
+    final index = _latestStates.indexWhere(
+          (record) => record.state == state,
     );
 
     if (index == -1) {
@@ -226,9 +173,7 @@ class _StateComparisonPageState
   // FORMAT POPULATION
   // ============================================================
 
-  String _formatPopulation(
-      double population,
-      ) {
+  String _formatPopulation(double population) {
     if (population >= 1000) {
       return '${(population / 1000).toStringAsFixed(2)}M';
     }
@@ -240,9 +185,7 @@ class _StateComparisonPageState
   // FORMAT GROWTH
   // ============================================================
 
-  String _formatGrowth(
-      double? growth,
-      ) {
+  String _formatGrowth(double? growth) {
     if (growth == null) {
       return 'N/A';
     }
@@ -256,10 +199,10 @@ class _StateComparisonPageState
   // ============================================================
 
   void _compareStates() {
-    if (_stateA == null ||
-        _stateB == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+    if (_stateA == null || _stateB == null) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Please select two states.',
@@ -267,12 +210,14 @@ class _StateComparisonPageState
         ),
       );
 
+      _forceDismissSnackBar();
       return;
     }
 
     if (_stateA == _stateB) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Please select two different states.',
@@ -280,27 +225,22 @@ class _StateComparisonPageState
         ),
       );
 
+      _forceDismissSnackBar();
       return;
     }
 
-    final stateAExists =
-    _latestStates.any(
-          (state) =>
-      state.state ==
-          _stateA,
+    final stateAExists = _latestStates.any(
+          (state) => state.state == _stateA,
     );
 
-    final stateBExists =
-    _latestStates.any(
-          (state) =>
-      state.state ==
-          _stateB,
+    final stateBExists = _latestStates.any(
+          (state) => state.state == _stateB,
     );
 
-    if (!stateAExists ||
-        !stateBExists) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+    if (!stateAExists || !stateBExists) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'One or more selected states are invalid.',
@@ -308,12 +248,28 @@ class _StateComparisonPageState
         ),
       );
 
+      _forceDismissSnackBar();
       return;
     }
 
     setState(() {
       _showComparison = true;
     });
+  }
+
+  // ============================================================
+  // FORCE DISMISS SNACKBAR
+  // ============================================================
+
+  void _forceDismissSnackBar() {
+    Future.delayed(
+      const Duration(seconds: 3),
+          () {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      },
+    );
   }
 
   // ============================================================
@@ -327,31 +283,19 @@ class _StateComparisonPageState
       int rankB,
       ) {
     final difference =
-    (a.population -
-        b.population)
-        .abs();
+    (a.population - b.population).abs();
 
     final largerState =
-    a.population >=
-        b.population
-        ? a.state
-        : b.state;
+    a.population >= b.population ? a.state : b.state;
 
     final smallerState =
-    a.population >=
-        b.population
-        ? b.state
-        : a.state;
+    a.population >= b.population ? b.state : a.state;
 
     final betterRankState =
-    rankA <= rankB
-        ? a.state
-        : b.state;
+    rankA <= rankB ? a.state : b.state;
 
     final formattedDifference =
-    _formatPopulation(
-      difference,
-    );
+    _formatPopulation(difference);
 
     return '$largerState has approximately '
         '$formattedDifference more residents than '
@@ -364,32 +308,20 @@ class _StateComparisonPageState
   // SAVE COMPARISON REPORT
   // ============================================================
 
-  Future<void>
-  _saveComparisonReport({
-    required StatePopulationData
-    stateA,
-    required StatePopulationData
-    stateB,
+  Future<void> _saveComparisonReport({
+    required StatePopulationData stateA,
+    required StatePopulationData stateB,
     required int rankA,
     required int rankB,
   }) async {
-    // ----------------------------------------------------------
-    // Prevent rapid multiple taps.
-    // ----------------------------------------------------------
-
     if (_isSavingReport) {
       return;
     }
 
-    // ----------------------------------------------------------
-    // Defensive validation:
-    // same state cannot be compared.
-    // ----------------------------------------------------------
+    if (stateA.state == stateB.state) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-    if (stateA.state ==
-        stateB.state) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Please select two different states.',
@@ -397,6 +329,7 @@ class _StateComparisonPageState
         ),
       );
 
+      _forceDismissSnackBar();
       return;
     }
 
@@ -405,58 +338,37 @@ class _StateComparisonPageState
     });
 
     try {
-      // --------------------------------------------------------
-      // Read all saved reports.
-      // --------------------------------------------------------
-
       final existingReports =
-      await _reportsService
-          .getAll();
+      await _reportsService.getAll();
 
-      // --------------------------------------------------------
-      // Duplicate detection.
-      //
-      // Selangor vs Johor
-      // and
-      // Johor vs Selangor
-      //
-      // are considered the same comparison.
-      // --------------------------------------------------------
+      // ========================================================
+      // DUPLICATE CHECK
+      // ========================================================
 
-      final duplicateExists =
-      existingReports.any(
+      final duplicateExists = existingReports.any(
             (report) {
-          if (report.reportType !=
-              'State Comparison') {
+          if (report.reportType != 'State Comparison') {
             return false;
           }
 
           final sameOrder =
-              report.stateA ==
-                  stateA.state &&
-                  report.stateB ==
-                      stateB.state;
+              report.stateA == stateA.state &&
+                  report.stateB == stateB.state;
 
           final reversedOrder =
-              report.stateA ==
-                  stateB.state &&
-                  report.stateB ==
-                      stateA.state;
+              report.stateA == stateB.state &&
+                  report.stateB == stateA.state;
 
-          return sameOrder ||
-              reversedOrder;
+          return sameOrder || reversedOrder;
         },
       );
-
-      // --------------------------------------------------------
-      // Stop duplicate creation.
-      // --------------------------------------------------------
 
       if (duplicateExists) {
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context)
-            .showSnackBar(
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
               'This comparison report has already been saved.',
@@ -464,78 +376,83 @@ class _StateComparisonPageState
           ),
         );
 
+        _forceDismissSnackBar();
         return;
       }
 
-      // --------------------------------------------------------
-      // Build report.
-      // --------------------------------------------------------
+      // ========================================================
+      // MAXIMUM 50 REPORTS
+      // ========================================================
 
-      final now =
-      DateTime.now();
+      if (existingReports.length >= _maxSavedReports) {
+        if (!mounted) return;
 
-      final insight =
-      _buildInsight(
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Maximum of 50 saved reports reached. '
+                  'Delete an existing report to save a new one.',
+            ),
+          ),
+        );
+
+        _forceDismissSnackBar();
+        return;
+      }
+
+      // ========================================================
+      // CREATE REPORT
+      // ========================================================
+
+      final now = DateTime.now();
+
+      final insight = _buildInsight(
         stateA,
         stateB,
         rankA,
         rankB,
       );
 
-      final report =
-      IntelligenceReport(
-        id: now
-            .microsecondsSinceEpoch
-            .toString(),
+      final report = IntelligenceReport(
+        id: now.microsecondsSinceEpoch.toString(),
         title:
         '${stateA.state} vs ${stateB.state} Comparison',
-        stateA:
-        stateA.state,
-        stateB:
-        stateB.state,
-        reportType:
-        'State Comparison',
-        insight:
-        insight,
+        stateA: stateA.state,
+        stateB: stateB.state,
+        reportType: 'State Comparison',
+        insight: insight,
         note: '',
-        createdAt:
-        now,
-        updatedAt:
-        now,
+        createdAt: now,
+        updatedAt: now,
       );
 
-      // --------------------------------------------------------
-      // Create report.
-      // --------------------------------------------------------
-
-      await _reportsService
-          .create(
-        report,
-      );
+      await _reportsService.create(report);
 
       if (!mounted) return;
 
-      // --------------------------------------------------------
-      // Success message.
-      // --------------------------------------------------------
+      // ========================================================
+      // SUCCESS SNACKBAR
+      // ========================================================
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-          const Text(
+          content: const Text(
             'Comparison report saved successfully.',
           ),
-          action:
-          SnackBarAction(
+          action: SnackBarAction(
             label: 'VIEW',
             onPressed: () {
+              ScaffoldMessenger.of(context)
+                  .hideCurrentSnackBar();
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (
-                      context,
-                      ) =>
+                  builder: (context) =>
                   const SavedIntelligenceReportsPage(),
                 ),
               );
@@ -543,30 +460,30 @@ class _StateComparisonPageState
           ),
         ),
       );
-    } catch (e) {
-      // --------------------------------------------------------
-      // Error handling.
-      // --------------------------------------------------------
 
+      // IMPORTANT:
+      // We manually dismiss it instead of relying on
+      // SnackBar.duration.
+      _forceDismissSnackBar();
+    } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Unable to save comparison report. Please try again.',
+            'Unable to save comparison report. '
+                'Please try again.',
           ),
         ),
       );
-    } finally {
-      // --------------------------------------------------------
-      // Re-enable Save button.
-      // --------------------------------------------------------
 
+      _forceDismissSnackBar();
+    } finally {
       if (mounted) {
         setState(() {
-          _isSavingReport =
-          false;
+          _isSavingReport = false;
         });
       }
     }
@@ -577,104 +494,67 @@ class _StateComparisonPageState
   // ============================================================
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
-    // ----------------------------------------------------------
-    // Loading
-    // ----------------------------------------------------------
-
+  Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title:
-          const Text(
+          title: const Text(
             'State Comparison Tool',
           ),
         ),
-        body:
-        const Center(
-          child:
-          CircularProgressIndicator(),
+        body: const Center(
+          child: CircularProgressIndicator(),
         ),
       );
     }
 
-    // ----------------------------------------------------------
-    // Error
-    // ----------------------------------------------------------
-
     if (_errorMessage != null) {
       return Scaffold(
         appBar: AppBar(
-          title:
-          const Text(
+          title: const Text(
             'State Comparison Tool',
           ),
         ),
         body: Center(
           child: Padding(
-            padding:
-            const EdgeInsets
-                .all(
-              24,
-            ),
+            padding: const EdgeInsets.all(24),
             child: Column(
-              mainAxisSize:
-              MainAxisSize
-                  .min,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons
-                      .error_outline,
+                  Icons.error_outline,
                   size: 50,
                 ),
 
-                const SizedBox(
-                  height: 12,
-                ),
+                const SizedBox(height: 12),
 
                 const Text(
                   'Unable to load comparison data',
-                  style:
-                  TextStyle(
-                    fontSize:
-                    18,
-                    fontWeight:
-                    FontWeight
-                        .bold,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
 
-                const SizedBox(
-                  height: 8,
-                ),
+                const SizedBox(height: 8),
 
                 Text(
                   _errorMessage!,
-                  textAlign:
-                  TextAlign
-                      .center,
+                  textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(
-                  height: 16,
-                ),
+                const SizedBox(height: 16),
 
                 FilledButton(
                   onPressed: () {
                     setState(() {
-                      _isLoading =
-                      true;
-
-                      _errorMessage =
-                      null;
+                      _isLoading = true;
+                      _errorMessage = null;
                     });
 
                     _loadData();
                   },
-                  child:
-                  const Text(
+                  child: const Text(
                     'Retry',
                   ),
                 ),
@@ -685,50 +565,36 @@ class _StateComparisonPageState
       );
     }
 
-    // ----------------------------------------------------------
-    // Current state records
-    // ----------------------------------------------------------
-
-    final latestA =
-    _stateA == null
+    final latestA = _stateA == null
         ? null
-        : _getLatestRecord(
-      _stateA!,
-    );
+        : _getLatestRecord(_stateA!);
 
-    final latestB =
-    _stateB == null
+    final latestB = _stateB == null
         ? null
-        : _getLatestRecord(
-      _stateB!,
-    );
+        : _getLatestRecord(_stateB!);
 
-    final previousA =
-    latestA == null
+    final previousA = latestA == null
         ? null
         : _getPreviousYearRecord(
       latestA.state,
       latestA,
     );
 
-    final previousB =
-    latestB == null
+    final previousB = latestB == null
         ? null
         : _getPreviousYearRecord(
       latestB.state,
       latestB,
     );
 
-    final growthA =
-    latestA == null
+    final growthA = latestA == null
         ? null
         : _calculateGrowth(
       latestA,
       previousA,
     );
 
-    final growthB =
-    latestB == null
+    final growthB = latestB == null
         ? null
         : _calculateGrowth(
       latestB,
@@ -736,94 +602,59 @@ class _StateComparisonPageState
     );
 
     final rankA =
-    _stateA == null
-        ? 0
-        : _getRanking(
-      _stateA!,
-    );
+    _stateA == null ? 0 : _getRanking(_stateA!);
 
     final rankB =
-    _stateB == null
-        ? 0
-        : _getRanking(
-      _stateB!,
-    );
-
-    // ----------------------------------------------------------
-    // Main screen
-    // ----------------------------------------------------------
+    _stateB == null ? 0 : _getRanking(_stateB!);
 
     return Scaffold(
       appBar: AppBar(
-        title:
-        const Text(
+        title: const Text(
           'State Comparison Tool',
         ),
       ),
       body: ListView(
-        padding:
-        const EdgeInsets.all(
-          16,
-        ),
+        padding: const EdgeInsets.all(16),
         children: [
           const Text(
             'Compare Malaysian States',
-            style:
-            TextStyle(
+            style: TextStyle(
               fontSize: 22,
-              fontWeight:
-              FontWeight.bold,
+              fontWeight: FontWeight.bold,
             ),
           ),
 
-          const SizedBox(
-            height: 6,
-          ),
+          const SizedBox(height: 6),
 
           Text(
-            'Select two states to compare their latest population, ranking, and year-over-year growth.',
-            style:
-            TextStyle(
-              color:
-              Colors.grey
-                  .shade600,
+            'Select two states to compare their latest '
+                'population, ranking, and year-over-year growth.',
+            style: TextStyle(
+              color: Colors.grey.shade600,
               height: 1.4,
             ),
           ),
 
-          const SizedBox(
-            height: 20,
-          ),
+          const SizedBox(height: 20),
 
           // ====================================================
           // STATE A
           // ====================================================
 
           _StateSelector(
-            label:
-            'State A',
-            value:
-            _stateA,
-            states:
-            _latestStates,
-            icon:
-            Icons
-                .location_on_outlined,
-            onChanged:
-                (value) {
+            label: 'State A',
+            value: _stateA,
+            states: _latestStates,
+            icon: Icons.location_on_outlined,
+            onChanged: (value) {
               setState(() {
-                _stateA =
-                    value;
-
-                _showComparison =
-                false;
+                _stateA = value;
+                _showComparison = false;
               });
             },
           ),
 
-          const SizedBox(
-            height: 12,
-          ),
+          const SizedBox(height: 12),
 
           // ====================================================
           // COMPARISON ICON
@@ -833,110 +664,65 @@ class _StateComparisonPageState
             child: Container(
               width: 44,
               height: 44,
-              decoration:
-              BoxDecoration(
-                color:
-                const Color(
-                  0xFFEAF7FC,
-                ),
-                shape:
-                BoxShape
-                    .circle,
-                border:
-                Border.all(
-                  color:
-                  const Color(
-                    0xFFB6D5E1,
-                  ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF7FC),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFFB6D5E1),
                 ),
               ),
-              child:
-              const Icon(
-                Icons
-                    .compare_arrows_rounded,
-                color:
-                Color(
-                  0xFF075985,
-                ),
+              child: const Icon(
+                Icons.compare_arrows_rounded,
+                color: Color(0xFF075985),
                 size: 24,
               ),
             ),
           ),
 
-          const SizedBox(
-            height: 12,
-          ),
+          const SizedBox(height: 12),
 
           // ====================================================
           // STATE B
           // ====================================================
 
           _StateSelector(
-            label:
-            'State B',
-            value:
-            _stateB,
-            states:
-            _latestStates,
-            icon:
-            Icons
-                .location_on_outlined,
-            onChanged:
-                (value) {
+            label: 'State B',
+            value: _stateB,
+            states: _latestStates,
+            icon: Icons.location_on_outlined,
+            onChanged: (value) {
               setState(() {
-                _stateB =
-                    value;
-
-                _showComparison =
-                false;
+                _stateB = value;
+                _showComparison = false;
               });
             },
           ),
 
-          const SizedBox(
-            height: 18,
-          ),
+          const SizedBox(height: 18),
 
           // ====================================================
           // COMPARE BUTTON
           // ====================================================
 
           SizedBox(
-            width:
-            double.infinity,
-            child:
-            FilledButton.icon(
-              onPressed:
-              _compareStates,
-              icon:
-              const Icon(
-                Icons
-                    .compare_arrows_rounded,
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _compareStates,
+              icon: const Icon(
+                Icons.compare_arrows_rounded,
               ),
-              label:
-              const Text(
+              label: const Text(
                 'Compare States',
               ),
-              style:
-              FilledButton
-                  .styleFrom(
-                padding:
-                const EdgeInsets
-                    .symmetric(
-                  vertical:
-                  15,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 15,
                 ),
                 backgroundColor:
-                const Color(
-                  0xFF168AAD,
-                ),
-                shape:
-                RoundedRectangleBorder(
+                const Color(0xFF168AAD),
+                shape: RoundedRectangleBorder(
                   borderRadius:
-                  BorderRadius
-                      .circular(
-                    14,
-                  ),
+                  BorderRadius.circular(14),
                 ),
               ),
             ),
@@ -949,161 +735,99 @@ class _StateComparisonPageState
           if (_showComparison &&
               latestA != null &&
               latestB != null) ...[
-            const SizedBox(
-              height: 24,
-            ),
+            const SizedBox(height: 24),
 
             const Text(
               'Comparison Result',
-              style:
-              TextStyle(
-                fontSize:
-                18,
-                fontWeight:
-                FontWeight
-                    .bold,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
 
-            const SizedBox(
-              height: 12,
-            ),
+            const SizedBox(height: 12),
 
             Row(
               crossAxisAlignment:
-              CrossAxisAlignment
-                  .start,
+              CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child:
-                  _ComparisonCard(
-                    state:
-                    latestA
-                        .state,
+                  child: _ComparisonCard(
+                    state: latestA.state,
                     population:
                     _formatPopulation(
-                      latestA
-                          .population,
+                      latestA.population,
                     ),
                     ranking:
-                    rankA == 0
-                        ? 'N/A'
-                        : '#$rankA',
+                    rankA == 0 ? 'N/A' : '#$rankA',
                     year:
-                    latestA
-                        .date
-                        .year
-                        .toString(),
+                    latestA.date.year.toString(),
                     growth:
-                    _formatGrowth(
-                      growthA,
-                    ),
+                    _formatGrowth(growthA),
                   ),
                 ),
 
-                const SizedBox(
-                  width: 10,
-                ),
+                const SizedBox(width: 10),
 
                 Expanded(
-                  child:
-                  _ComparisonCard(
-                    state:
-                    latestB
-                        .state,
+                  child: _ComparisonCard(
+                    state: latestB.state,
                     population:
                     _formatPopulation(
-                      latestB
-                          .population,
+                      latestB.population,
                     ),
                     ranking:
-                    rankB == 0
-                        ? 'N/A'
-                        : '#$rankB',
+                    rankB == 0 ? 'N/A' : '#$rankB',
                     year:
-                    latestB
-                        .date
-                        .year
-                        .toString(),
+                    latestB.date.year.toString(),
                     growth:
-                    _formatGrowth(
-                      growthB,
-                    ),
+                    _formatGrowth(growthB),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(
-              height: 18,
-            ),
+            const SizedBox(height: 18),
 
             // ==================================================
             // COMPARISON INSIGHT
             // ==================================================
 
             Container(
-              padding:
-              const EdgeInsets
-                  .all(
-                18,
-              ),
-              decoration:
-              BoxDecoration(
-                color:
-                const Color(
-                  0xFFEAF7FC,
-                ),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF7FC),
                 borderRadius:
-                BorderRadius
-                    .circular(
-                  18,
-                ),
-                border:
-                Border.all(
-                  color:
-                  const Color(
-                    0xFFB6D5E1,
-                  ),
+                BorderRadius.circular(18),
+                border: Border.all(
+                  color: const Color(0xFFB6D5E1),
                 ),
               ),
               child: Column(
                 crossAxisAlignment:
-                CrossAxisAlignment
-                    .start,
+                CrossAxisAlignment.start,
                 children: [
                   const Row(
                     children: [
                       Icon(
-                        Icons
-                            .lightbulb_outline,
-                        color:
-                        Color(
-                          0xFF168AAD,
-                        ),
+                        Icons.lightbulb_outline,
+                        color: Color(0xFF168AAD),
                       ),
 
-                      SizedBox(
-                        width: 8,
-                      ),
+                      SizedBox(width: 8),
 
                       Text(
                         'Comparison Insight',
-                        style:
-                        TextStyle(
-                          fontSize:
-                          16,
+                        style: TextStyle(
+                          fontSize: 16,
                           fontWeight:
-                          FontWeight
-                              .bold,
+                          FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(
-                    height: 10,
-                  ),
+                  const SizedBox(height: 10),
 
                   Text(
                     _buildInsight(
@@ -1112,98 +836,66 @@ class _StateComparisonPageState
                       rankA,
                       rankB,
                     ),
-                    style:
-                    const TextStyle(
-                      height:
-                      1.5,
+                    style: const TextStyle(
+                      height: 1.5,
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(
-              height: 14,
-            ),
+            const SizedBox(height: 14),
 
             // ==================================================
             // SAVE REPORT BUTTON
             // ==================================================
 
             SizedBox(
-              width:
-              double.infinity,
-              child:
-              FilledButton.icon(
-                onPressed:
-                _isSavingReport
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _isSavingReport
                     ? null
                     : () async {
                   await _saveComparisonReport(
-                    stateA:
-                    latestA,
-                    stateB:
-                    latestB,
-                    rankA:
-                    rankA,
-                    rankB:
-                    rankB,
+                    stateA: latestA,
+                    stateB: latestB,
+                    rankA: rankA,
+                    rankB: rankB,
                   );
                 },
-
-                // Spinner while saving.
-                icon:
-                _isSavingReport
+                icon: _isSavingReport
                     ? const SizedBox(
-                  width:
-                  18,
-                  height:
-                  18,
+                  width: 18,
+                  height: 18,
                   child:
                   CircularProgressIndicator(
-                    strokeWidth:
-                    2,
+                    strokeWidth: 2,
                   ),
                 )
                     : const Icon(
-                  Icons
-                      .bookmark_add_outlined,
+                  Icons.bookmark_add_outlined,
                 ),
-
                 label: Text(
                   _isSavingReport
                       ? 'Saving...'
                       : 'Save Comparison Report',
                 ),
-
-                style:
-                FilledButton
-                    .styleFrom(
+                style: FilledButton.styleFrom(
                   padding:
-                  const EdgeInsets
-                      .symmetric(
-                    vertical:
-                    15,
+                  const EdgeInsets.symmetric(
+                    vertical: 15,
                   ),
                   backgroundColor:
-                  const Color(
-                    0xFF168AAD,
-                  ),
-                  shape:
-                  RoundedRectangleBorder(
+                  const Color(0xFF168AAD),
+                  shape: RoundedRectangleBorder(
                     borderRadius:
-                    BorderRadius
-                        .circular(
-                      14,
-                    ),
+                    BorderRadius.circular(14),
                   ),
                 ),
               ),
             ),
 
-            const SizedBox(
-              height: 10,
-            ),
+            const SizedBox(height: 10),
           ],
         ],
       ),
@@ -1215,15 +907,12 @@ class _StateComparisonPageState
 // STATE SELECTOR
 // ============================================================
 
-class _StateSelector
-    extends StatelessWidget {
+class _StateSelector extends StatelessWidget {
   final String label;
   final String? value;
-  final List<StatePopulationData>
-  states;
+  final List<StatePopulationData> states;
   final IconData icon;
-  final ValueChanged<String?>
-  onChanged;
+  final ValueChanged<String?> onChanged;
 
   const _StateSelector({
     required this.label,
@@ -1234,52 +923,29 @@ class _StateSelector
   });
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
-    return DropdownButtonFormField<
-        String>(
-      initialValue:
-      value,
-      decoration:
-      InputDecoration(
-        labelText:
-        label,
-        prefixIcon:
-        Icon(
-          icon,
-        ),
-        filled:
-        true,
-        fillColor:
-        Theme.of(context)
-            .cardColor,
-        border:
-        OutlineInputBorder(
-          borderRadius:
-          BorderRadius
-              .circular(
-            16,
-          ),
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Theme.of(context).cardColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
-      items:
-      states
+      items: states
           .map(
-            (state) =>
-            DropdownMenuItem<
-                String>(
-              value:
-              state.state,
-              child:
-              Text(
-                state.state,
-              ),
-            ),
+            (state) => DropdownMenuItem<String>(
+          value: state.state,
+          child: Text(
+            state.state,
+          ),
+        ),
       )
           .toList(),
-      onChanged:
-      onChanged,
+      onChanged: onChanged,
     );
   }
 }
@@ -1288,8 +954,7 @@ class _StateSelector
 // COMPARISON CARD
 // ============================================================
 
-class _ComparisonCard
-    extends StatelessWidget {
+class _ComparisonCard extends StatelessWidget {
   final String state;
   final String population;
   final String ranking;
@@ -1305,119 +970,67 @@ class _ComparisonCard
   });
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     return Container(
-      padding:
-      const EdgeInsets.all(
-        15,
-      ),
-      decoration:
-      BoxDecoration(
-        gradient:
-        const LinearGradient(
-          begin:
-          Alignment.topLeft,
-          end:
-          Alignment.bottomRight,
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            Color(
-              0xFF075985,
-            ),
-            Color(
-              0xFF168AAD,
-            ),
+            Color(0xFF075985),
+            Color(0xFF168AAD),
           ],
         ),
-        borderRadius:
-        BorderRadius.circular(
-          18,
-        ),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color:
-            const Color(
-              0xFF075985,
-            ).withValues(
-              alpha: 0.15,
-            ),
-            blurRadius:
-            12,
-            offset:
-            const Offset(
-              0,
-              5,
-            ),
+            color: const Color(0xFF075985)
+                .withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment:
-        CrossAxisAlignment
-            .start,
+        CrossAxisAlignment.start,
         children: [
           Text(
             state,
-            maxLines:
-            2,
-            overflow:
-            TextOverflow
-                .ellipsis,
-            style:
-            const TextStyle(
-              color:
-              Colors.white,
-              fontSize:
-              17,
-              fontWeight:
-              FontWeight
-                  .bold,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
             ),
           ),
 
-          const SizedBox(
-            height: 16,
+          const SizedBox(height: 16),
+
+          _ComparisonValue(
+            label: 'Population',
+            value: population,
+            icon: Icons.people_alt_outlined,
           ),
 
           _ComparisonValue(
-            label:
-            'Population',
-            value:
-            population,
-            icon:
-            Icons
-                .people_alt_outlined,
+            label: 'Malaysia Rank',
+            value: ranking,
+            icon: Icons.leaderboard_outlined,
           ),
 
           _ComparisonValue(
-            label:
-            'Malaysia Rank',
-            value:
-            ranking,
-            icon:
-            Icons
-                .leaderboard_outlined,
+            label: 'Latest Year',
+            value: year,
+            icon: Icons.calendar_today_outlined,
           ),
 
           _ComparisonValue(
-            label:
-            'Latest Year',
-            value:
-            year,
-            icon:
-            Icons
-                .calendar_today_outlined,
-          ),
-
-          _ComparisonValue(
-            label:
-            'YoY Growth',
-            value:
-            growth,
-            icon:
-            Icons
-                .trending_up_rounded,
+            label: 'YoY Growth',
+            value: growth,
+            icon: Icons.trending_up_rounded,
           ),
         ],
       ),
@@ -1429,8 +1042,7 @@ class _ComparisonCard
 // COMPARISON VALUE
 // ============================================================
 
-class _ComparisonValue
-    extends StatelessWidget {
+class _ComparisonValue extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
@@ -1442,63 +1054,45 @@ class _ComparisonValue
   });
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     return Padding(
-      padding:
-      const EdgeInsets.only(
+      padding: const EdgeInsets.only(
         bottom: 12,
       ),
       child: Row(
         crossAxisAlignment:
-        CrossAxisAlignment
-            .start,
+        CrossAxisAlignment.start,
         children: [
           Icon(
             icon,
-            size:
-            17,
-            color:
-            Colors.white70,
+            size: 17,
+            color: Colors.white70,
           ),
 
-          const SizedBox(
-            width: 7,
-          ),
+          const SizedBox(width: 7),
 
           Expanded(
             child: Column(
               crossAxisAlignment:
-              CrossAxisAlignment
-                  .start,
+              CrossAxisAlignment.start,
               children: [
                 Text(
                   value,
-                  style:
-                  const TextStyle(
-                    color:
-                    Colors.white,
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontWeight:
-                    FontWeight
-                        .bold,
-                    fontSize:
-                    15,
+                    FontWeight.bold,
+                    fontSize: 15,
                   ),
                 ),
 
-                const SizedBox(
-                  height: 1,
-                ),
+                const SizedBox(height: 1),
 
                 Text(
                   label,
-                  style:
-                  const TextStyle(
-                    color:
-                    Colors.white70,
-                    fontSize:
-                    10,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 10,
                   ),
                 ),
               ],

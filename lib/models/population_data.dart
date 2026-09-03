@@ -28,9 +28,6 @@ class PopulationData {
     }
 
     return PopulationData(
-      // age/sex/ethnicity feed the "overall/both/overall" filter in
-      // DashboardStats.population() - default to 'unknown' rather
-      // than throwing, so the row is still counted in fallback logic.
       age: (json['age'] as String?) ?? 'unknown',
       sex: (json['sex'] as String?) ?? 'unknown',
       date: date,

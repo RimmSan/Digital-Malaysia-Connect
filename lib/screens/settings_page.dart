@@ -145,9 +145,6 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
-          // ============================================================
-          // HEADER
-          // ============================================================
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -202,10 +199,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
 
           const SizedBox(height: 28),
-
-          // ============================================================
-          // APPEARANCE
-          // ============================================================
           const _SectionLabel(
             title: 'Appearance',
             icon: Icons.palette_outlined,
@@ -271,10 +264,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
 
           const SizedBox(height: 26),
-
-          // ============================================================
-          // PREFERENCES
-          // ============================================================
           const _SectionLabel(
             title: 'Preferences',
             icon: Icons.tune_rounded,
@@ -339,10 +328,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
 
           const SizedBox(height: 26),
-
-          // ============================================================
-          // ABOUT
-          // ============================================================
           const _SectionLabel(
             title: 'About',
             icon: Icons.info_outline_rounded,
@@ -408,10 +393,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
 
           const SizedBox(height: 30),
-
-          // ============================================================
-          // FOOTER
-          // ============================================================
           Center(
             child: Column(
               children: [
@@ -492,10 +473,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
-// ============================================================
-// HEADER ICON
-// ============================================================
-
 class _HeaderIcon extends StatelessWidget {
   const _HeaderIcon();
 
@@ -516,10 +493,6 @@ class _HeaderIcon extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// SECTION LABEL
-// ============================================================
 
 class _SectionLabel extends StatelessWidget {
   final String title;
@@ -555,10 +528,6 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// SETTING CARD
-// ============================================================
 
 class _SettingCard extends StatelessWidget {
   final Widget child;
@@ -600,10 +569,6 @@ class _SettingCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// SETTING ICON
-// ============================================================
-
 class _SettingIcon extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -631,9 +596,6 @@ class _SettingIcon extends StatelessWidget {
   }
 }
 
-// ============================================================
-// ABOUT INFO ROW
-// ============================================================
 
 class _AboutInfoRow extends StatelessWidget {
   final IconData icon;

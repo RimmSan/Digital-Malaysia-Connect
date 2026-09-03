@@ -1,14 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ============================================================
-// SPARKLINE CHART
-// ------------------------------------------------------------
-// A small trend line, drawn with CustomPainter - no chart
-// package/dependency required, so it can't cause a pub resolve
-// error. Pass a list of numeric values (oldest to newest); it
-// scales itself automatically.
-// ============================================================
-
 class SparklineChart extends StatelessWidget {
   final List<double> values;
   final Color color;
@@ -73,7 +64,6 @@ class _SparklinePainter extends CustomPainter {
       linePath.lineTo(pointAt(i).dx, pointAt(i).dy);
     }
 
-    // Filled area under the line for a bit of visual weight.
     final fillPath = Path.from(linePath)
       ..lineTo(pointAt(values.length - 1).dx, size.height)
       ..lineTo(pointAt(0).dx, size.height)
@@ -96,7 +86,6 @@ class _SparklinePainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round,
     );
 
-    // Highlight the latest point.
     final lastPoint = pointAt(values.length - 1);
     canvas.drawCircle(lastPoint, 3.5, Paint()..color = color);
     canvas.drawCircle(

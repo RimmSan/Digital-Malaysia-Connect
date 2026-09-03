@@ -35,10 +35,6 @@ class InternetPenetrationData {
       );
     }
 
-    // Individual rate/actual fields default to 0.0 rather than
-    // throwing - a record missing one metric (e.g. ptv_rate) is
-    // still useful for the metrics it does have (e.g. mbb_rate,
-    // which is what the dashboard's headline stat relies on).
     return InternetPenetrationData(
       date: date,
       fbbActual: _numOrZero(json['fbb_actual']),

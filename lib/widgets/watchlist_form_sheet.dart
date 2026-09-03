@@ -4,22 +4,6 @@ import 'package:flutter/services.dart';
 import '../models/watchlist_alert.dart';
 import '../theme/app_colors.dart';
 
-// ============================================================
-// WATCHLIST FORM SHEET
-// ------------------------------------------------------------
-// Bottom sheet used for both CREATE and UPDATE of a
-// WatchlistAlert. Pass `existingAlert` to edit; omit it to
-// create a new one. Mirrors the NoteFormSheet pattern already
-// used by the Dashboard's "My Insights" CRUD.
-//
-// Validation rules enforced here:
-//   - Threshold is required (can't be blank).
-//   - Integers only (no decimals) - enforced both by input
-//     formatter (blocks typing '.') and by a parse check.
-//   - Must be between 0 and 999 inclusive.
-//   - Can't create a duplicate alert (same metric + same
-//     direction) that already exists in the watchlist.
-// ============================================================
 
 Future<WatchlistAlert?> showWatchlistFormSheet(
     BuildContext context, {
@@ -80,7 +64,6 @@ class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
     super.dispose();
   }
 
-  /// Returns an error message if invalid, or null if the value is valid.
   String? _validateThreshold(String rawInput) {
     final trimmed = rawInput.trim();
 
@@ -88,9 +71,6 @@ class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
       return 'Enter a threshold value.';
     }
 
-    // Integers only - reject anything that isn't a whole number
-    // (this also catches stray '-' or '.' that slipped past the
-    // input formatter, e.g. via paste).
     final intValue = int.tryParse(trimmed);
     if (intValue == null) {
       return 'Whole numbers only (no decimals or symbols).';
@@ -110,7 +90,7 @@ class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
   bool _isDuplicate(int thresholdValue) {
     return widget.existingAlerts.any((a) {
       final isSameEntity = _isEditing && a.id == widget.existingAlert!.id;
-      if (isSameEntity) return false; // editing itself isn't a duplicate
+      if (isSameEntity) return false;
       return a.metricKey == _metricKey && a.direction == _direction;
     });
   }
@@ -249,8 +229,6 @@ class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
           TextField(
             controller: _thresholdController,
             keyboardType: TextInputType.number,
-            // Integers only: digits 0-9, max 3 characters (covers 0-999).
-            // This blocks '.', '-', 'e', letters, etc. at the keyboard level.
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(3),

@@ -1,14 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-// ============================================================
-// STAT GRID CARD
-// ------------------------------------------------------------
-// A compact card for the dashboard's 2-column stat grid (as
-// opposed to StatisticCard, which is a full-width row card used
-// elsewhere/by other modules). Optionally tappable - pass onTap
-// to make it interactive, otherwise it's just informational.
-// ============================================================
 
 class StatGridCard extends StatelessWidget {
   final String label;

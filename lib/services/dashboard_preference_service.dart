@@ -3,14 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/dashboard_preferences.dart';
 
-// ============================================================
-// DASHBOARD PREFERENCES SERVICE
-// ------------------------------------------------------------
-// Loads/saves the user's "Customize Dashboard" choices. Kept
-// separate from DashboardNotesService since it's a single object,
-// not a list of records.
-// ============================================================
-
 class DashboardPreferencesService {
   static const String _prefsKey = 'dashboard_preferences_v1';
 

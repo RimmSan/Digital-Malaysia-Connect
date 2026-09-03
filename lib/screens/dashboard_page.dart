@@ -45,14 +45,10 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _isLoading = true;
   String? _errorMessage;
   DateTime? _refreshedAt;
-
-  // ---- Global search (mirrors the mockup's top search bar) ----
   final TextEditingController _globalSearchController = TextEditingController();
   String _globalSearchQuery = '';
   final GlobalKey _statsGridKey = GlobalKey();
   final GlobalKey _recentUpdatesKey = GlobalKey();
-
-  // ---- My Insights search/filter (separate, scoped to that section) ----
   final TextEditingController _notesSearchController = TextEditingController();
   String _notesSearchQuery = '';
   String _selectedCategory = 'All';
@@ -88,11 +84,6 @@ class _DashboardPageState extends State<DashboardPage> {
       });
 
       final results = await Future.wait([
-        // Use the same full-history source as the Growth Tracker so
-        // both trend charts show identical data. getDomains() only
-        // returns the newest 100 raw rows (~4-5 dates after
-        // filtering), which made this sparkline show a nearly-flat
-        // recent sliver instead of the actual growth curve.
         _apiService.getDomainsFullHistory(),
         _apiService.getPopulation(),
         _apiService.getInternetPenetration(),
@@ -126,9 +117,6 @@ class _DashboardPageState extends State<DashboardPage> {
     if (mounted) setState(() => _notes = notes);
   }
 
-  // ============================================================
-  // PERSONALISED DASHBOARD (Customize)
-  // ============================================================
 
   Future<void> _openCustomizeSheet() async {
     final result = await showCustomizeDashboardSheet(
@@ -141,9 +129,6 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  // ============================================================
-  // NOTES CRUD HANDLERS
-  // ============================================================
 
   Future<void> _createNote() async {
     final result = await showNoteFormSheet(
@@ -208,9 +193,6 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       await _notesService.delete(note.id);
     } catch (e) {
-      // Roll back the optimistic UI update if the delete didn't
-      // actually persist, so the list doesn't silently drift out of
-      // sync with what's stored on disk.
       if (mounted) {
         setState(() => _notes.insert(removedIndex, note));
         _showSnackBar('Could not delete that insight. Please try again.');
@@ -235,10 +217,6 @@ class _DashboardPageState extends State<DashboardPage> {
       return matchesCategory && matchesSearch;
     }).toList();
   }
-
-  // ============================================================
-  // GLOBAL SEARCH
-  // ============================================================
 
   void _clearGlobalSearch() {
     _globalSearchController.clear();
@@ -269,10 +247,6 @@ class _DashboardPageState extends State<DashboardPage> {
     if (query.isEmpty) return [];
     final results = <SearchResultItem>[];
 
-    // ---- States ----
-    // Use the latest-year snapshot only - the raw list can contain
-    // decades of history per state, which would otherwise produce
-    // one duplicate result per year.
     final latestStates = DashboardStats.latestStateSnapshot(_statePopulation);
     for (final s in latestStates) {
       if (s.state.toLowerCase().contains(query)) {
@@ -294,7 +268,7 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
 
-    // ---- Metrics (the stat grid cards) ----
+
     final metrics = <(String, String, IconData, Color)>[
       ('Internet Penetration', internetValue, Icons.wifi, AppColors.internet),
       ('My Domains', domainsValue, Icons.language, AppColors.domains),
@@ -324,7 +298,6 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
 
-    // ---- Datasets ----
     const datasetNames = [
       'Domain Registrations dataset',
       'Population dataset',
@@ -347,7 +320,7 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
 
-    // ---- My Insights ----
+
     for (final n in _notes) {
       if (n.title.toLowerCase().contains(query) ||
           n.note.toLowerCase().contains(query)) {
@@ -417,7 +390,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     final filteredNotes = _filteredNotes;
 
-    // ---- Stat grid cards, filtered by personalization preferences ----
+
     final statCards = <Widget>[
       if (_preferences.showInternetCard)
         StatGridCard(
@@ -490,9 +463,6 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ============================================================
-              // HERO: Welcome back / Malaysia's Digital Pulse
-              // ============================================================
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -552,10 +522,6 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
 
               const SizedBox(height: 16),
-
-              // ============================================================
-              // GLOBAL SEARCH
-              // ============================================================
               DashboardSearchBar(
                 controller: _globalSearchController,
                 results: searchResults,
@@ -563,10 +529,6 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
 
               const SizedBox(height: AppSpacing.sectionGap),
-
-              // ============================================================
-              // STAT GRID (personalized via Customize)
-              // ============================================================
               SectionTitle(
                 title: 'Key Digital Indicators',
                 trailing: IconButton(
@@ -609,10 +571,6 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
 
               const SizedBox(height: AppSpacing.sectionGap - 12),
-
-              // ============================================================
-              // TRENDS
-              // ============================================================
               if (_preferences.showTrends) ...[
                 const SectionTitle(
                   title: 'Trends',
@@ -641,10 +599,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
                 const SizedBox(height: AppSpacing.sectionGap),
               ],
-
-              // ============================================================
-              // RECENT DATASET UPDATES
-              // ============================================================
               if (_preferences.showRecentUpdates) ...[
                 KeyedSubtree(
                   key: _recentUpdatesKey,
@@ -719,10 +673,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
                 const SizedBox(height: AppSpacing.sectionGap - 10),
               ],
-
-              // ============================================================
-              // MY INSIGHTS (CRUD, with its own search + filter)
-              // ============================================================
               SectionTitle(
                 title: 'My Insights',
                 subtitle: 'Pin a stat or jot down what you notice in the '
@@ -812,10 +762,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
 
               const SizedBox(height: AppSpacing.sectionGap - 12),
-
-              // ============================================================
-              // DATA SOURCE / REFRESH TIME
-              // ============================================================
               Center(
                 child: Text(
                   'Data source: Malaysian Government Open Data (data.gov.my)',
@@ -842,10 +788,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 }
-
-// ============================================================
-// TREND CARD (wraps SparklineChart with title + latest value)
-// ============================================================
 
 class _TrendCard extends StatelessWidget {
   final String title;

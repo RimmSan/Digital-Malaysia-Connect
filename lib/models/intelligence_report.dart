@@ -7,7 +7,6 @@ class IntelligenceReport {
   String? stateB;
 
   String reportType;
-  // 'State Insight' | 'State Comparison'
 
   String insight;
   String note;

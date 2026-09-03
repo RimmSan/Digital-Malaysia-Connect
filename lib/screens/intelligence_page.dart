@@ -28,7 +28,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
 
   bool _isLoading = true;
 
-  // Prevent repeated Save taps for State Growth Insight.
   bool _isSavingInsightReport = false;
 
   String? _errorMessage;
@@ -38,8 +37,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
 
   String? _selectedState;
 
-  // SharedPreferences key used to remember
-  // the user's last selected state.
   static const String _selectedStateKey =
       'intelligence_selected_state';
 
@@ -54,10 +51,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
     _scrollController.dispose();
     super.dispose();
   }
-
-  // ============================================================
-  // SELECTED STATE SHARED PREFERENCE
-  // ============================================================
 
   Future<String?> _loadSavedState() async {
     final preferences =
@@ -79,10 +72,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
       state,
     );
   }
-
-  // ============================================================
-  // LOAD STATE POPULATION DATA
-  // ============================================================
 
   Future<void> _loadStateData() async {
     try {
@@ -112,15 +101,12 @@ class _IntelligencePageState extends State<IntelligencePage> {
               ),
         );
 
-      // Load the state selected during
-      // the previous app session.
       final savedState =
       await _loadSavedState();
 
       String? stateToSelect;
 
       if (latestStates.isNotEmpty) {
-        // Validate saved state before restoring it.
         final savedStateExists =
             savedState != null &&
                 latestStates.any(
@@ -169,10 +155,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
     }
   }
 
-  // ============================================================
-  // GET LATEST RECORD
-  // ============================================================
-
   StatePopulationData? _getLatestRecord(
       String state,
       ) {
@@ -199,9 +181,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
     return records.first;
   }
 
-  // ============================================================
-  // PREVIOUS CALENDAR YEAR
-  // ============================================================
 
   StatePopulationData? _getPreviousYearRecord(
       String state,
@@ -226,9 +205,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
     return records.first;
   }
 
-  // ============================================================
-  // STATE RANKING
-  // ============================================================
 
   int _getStateRanking(
       String state,
@@ -247,9 +223,7 @@ class _IntelligencePageState extends State<IntelligencePage> {
     return index + 1;
   }
 
-  // ============================================================
-  // FORMAT POPULATION
-  // ============================================================
+
 
   String _formatPopulation(
       double population,
@@ -260,10 +234,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
 
     return '${population.toStringAsFixed(1)}K';
   }
-
-  // ============================================================
-  // CALCULATE GROWTH
-  // ============================================================
 
   double? _calculateGrowth(
       StatePopulationData latest,
@@ -280,21 +250,17 @@ class _IntelligencePageState extends State<IntelligencePage> {
         100;
   }
 
-  // ============================================================
-  // SAVE STATE INSIGHT REPORT
-  // ============================================================
+
 
   Future<void> _saveStateInsightReport({
     required String state,
     required String insight,
   }) async {
-    // Prevent rapid repeated taps.
+
     if (_isSavingInsightReport) {
       return;
     }
 
-    // Defensive validation:
-    // make sure the state actually exists.
     final stateExists =
     _latestStates.any(
           (record) =>
@@ -321,18 +287,12 @@ class _IntelligencePageState extends State<IntelligencePage> {
     });
 
     try {
-      // Load all current saved reports.
+
       final existingReports =
       await _reportsService
           .getAll();
 
-      // Duplicate rule:
-      //
-      // One State Insight per state.
-      //
-      // We use reportType + stateA,
-      // NOT the title, because users
-      // can edit titles later.
+
       final duplicateExists =
       existingReports.any(
             (report) =>
@@ -345,12 +305,12 @@ class _IntelligencePageState extends State<IntelligencePage> {
       if (duplicateExists) {
         if (!mounted) return;
 
-        // Close the Growth Insight sheet.
         Navigator.pop(context);
 
         ScaffoldMessenger.of(context)
             .showSnackBar(
           SnackBar(
+            duration: const Duration(seconds: 2),
             content: Text(
               '$state Growth Insight has already been saved.',
             ),
@@ -359,6 +319,7 @@ class _IntelligencePageState extends State<IntelligencePage> {
               label:
               'VIEW',
               onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -408,12 +369,12 @@ class _IntelligencePageState extends State<IntelligencePage> {
 
       if (!mounted) return;
 
-      // Close the Growth Insight sheet.
       Navigator.pop(context);
 
       ScaffoldMessenger.of(context)
           .showSnackBar(
         SnackBar(
+          duration: const Duration(seconds: 2),
           content: Text(
             '$state intelligence report saved successfully.',
           ),
@@ -422,6 +383,7 @@ class _IntelligencePageState extends State<IntelligencePage> {
             label:
             'VIEW',
             onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -437,7 +399,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
     } catch (e) {
       if (!mounted) return;
 
-      // Close the Growth Insight sheet.
       Navigator.pop(context);
 
       ScaffoldMessenger.of(context)
@@ -458,14 +419,10 @@ class _IntelligencePageState extends State<IntelligencePage> {
     }
   }
 
-  // ============================================================
-  // SELECT STATE FROM RANKING
-  // ============================================================
 
   void _selectStateFromRanking(
       String state,
       ) {
-    // Validate state before selecting it.
     final stateExists =
     _latestStates.any(
           (record) =>
@@ -482,7 +439,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
           state;
     });
 
-    // Remember selected state.
     _saveSelectedState(
       state,
     );
@@ -511,9 +467,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
     );
   }
 
-  // ============================================================
-  // SHOW STATE INSIGHT
-  // ============================================================
 
   void _showStateInsight() {
     final state =
@@ -761,9 +714,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
     );
   }
 
-  // ============================================================
-  // MAIN UI
-  // ============================================================
 
   @override
   Widget build(
@@ -913,10 +863,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
             12,
           ),
 
-          // ====================================================
-          // STATE DROPDOWN
-          // ====================================================
-
           DropdownButtonFormField<String>(
             key:
             ValueKey(
@@ -966,7 +912,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
                 return;
               }
 
-              // Validate selected state.
               final stateExists =
               _latestStates.any(
                     (
@@ -985,7 +930,7 @@ class _IntelligencePageState extends State<IntelligencePage> {
                     value;
               });
 
-              // Save using SharedPreferences.
+
               _saveSelectedState(
                 value,
               );
@@ -1020,10 +965,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
             14,
           ),
 
-          // ====================================================
-          // GENERATE STATE INSIGHT
-          // ====================================================
-
           SizedBox(
             width:
             double.infinity,
@@ -1049,10 +990,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
             height:
             30,
           ),
-
-          // ====================================================
-          // EXPLORE INTELLIGENCE
-          // ====================================================
 
           const Text(
             'Explore Intelligence',
@@ -1160,9 +1097,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
             30,
           ),
 
-          // ====================================================
-          // POPULATION RANKING
-          // ====================================================
 
           const Text(
             'Population Ranking',
@@ -1236,10 +1170,6 @@ class _IntelligencePageState extends State<IntelligencePage> {
     );
   }
 }
-
-// ============================================================
-// STATE OVERVIEW CARD
-// ============================================================
 
 class _StateOverviewCard
     extends StatelessWidget {
@@ -1345,10 +1275,6 @@ class _StateOverviewCard
   }
 }
 
-// ============================================================
-// OVERVIEW VALUE
-// ============================================================
-
 class _OverviewValue
     extends StatelessWidget {
   final String label;
@@ -1400,9 +1326,6 @@ class _OverviewValue
   }
 }
 
-// ============================================================
-// FEATURE CARD
-// ============================================================
 
 class _FeatureCard
     extends StatelessWidget {
@@ -1531,10 +1454,6 @@ class _FeatureCard
   }
 }
 
-// ============================================================
-// RANKING TILE
-// ============================================================
-
 class _RankingTile
     extends StatelessWidget {
   final int ranking;
@@ -1598,10 +1517,6 @@ class _RankingTile
     );
   }
 }
-
-// ============================================================
-// INSIGHT ROW
-// ============================================================
 
 class _InsightRow
     extends StatelessWidget {

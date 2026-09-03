@@ -15,7 +15,6 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    // Show splash for a short moment, then move to the main app.
     Timer(const Duration(seconds: 3), () {
       if (!mounted) return;
 
@@ -36,9 +35,9 @@ class _SplashScreenState extends State<SplashScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1B4F8C), // deep blue (top)
-              Color(0xFF2E6FA3), // lighter blue (middle)
-              Color(0xFF3F8C86), // teal (bottom)
+              Color(0xFF1B4F8C),
+              Color(0xFF2E6FA3),
+              Color(0xFF3F8C86),
             ],
             stops: [0.0, 0.55, 1.0],
           ),
@@ -50,7 +49,7 @@ class _SplashScreenState extends State<SplashScreen> {
               children: [
                 const Spacer(flex: 3),
 
-                // ICON BADGE
+
                 Container(
                   width: 84,
                   height: 84,
@@ -67,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 28),
 
-                // TITLE
+
                 const Text(
                   'Digital Malaysia\nConnect',
                   textAlign: TextAlign.center,
@@ -81,7 +80,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 14),
 
-                // SUBTITLE
+
                 Text(
                   'A Smart Digital Infrastructure Monitoring\n'
                       'Application Using Malaysian Open Data',
@@ -95,7 +94,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 20),
 
-                // DOT INDICATOR
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(3, (index) {
@@ -115,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const Spacer(flex: 2),
 
-                // SDG BADGE
+
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -155,7 +154,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 18),
 
-                // DATA SOURCE
+
                 Text(
                   'DATA SOURCE: DATA.GOV.MY',
                   style: TextStyle(

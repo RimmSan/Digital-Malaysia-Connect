@@ -3,19 +3,6 @@ import '../models/state_population_data.dart';
 import '../theme/app_colors.dart';
 import '../utils/dashboard_stats.dart';
 
-// ============================================================
-// STATE RANKING SHEET
-// ------------------------------------------------------------
-// Shows states ranked by population for a single selected year,
-// with controls to step through the full history available in
-// the dataset. Defaults to the latest year.
-//
-// Pass the FULL multi-year list here (not a pre-filtered
-// snapshot) - this widget does its own per-year filtering so all
-// the historical data your dataset actually contains stays
-// browsable instead of being thrown away.
-// ============================================================
-
 void showStateRankingSheet(
     BuildContext context, {
       required List<StatePopulationData> states,
@@ -43,7 +30,7 @@ class _StateRankingSheet extends StatefulWidget {
 }
 
 class _StateRankingSheetState extends State<_StateRankingSheet> {
-  late List<int> _availableYears; // ascending
+  late List<int> _availableYears;
   late int _selectedYear;
 
   @override
@@ -55,7 +42,7 @@ class _StateRankingSheetState extends State<_StateRankingSheet> {
     _selectedYear = years.isNotEmpty ? years.last : DateTime.now().year;
   }
 
-  // One row per state for the selected year, sorted by population desc.
+
   List<StatePopulationData> get _rankingForSelectedYear {
     final Map<String, StatePopulationData> byState = {};
     for (final d in widget.allStates) {
@@ -158,7 +145,6 @@ class _StateRankingSheetState extends State<_StateRankingSheet> {
               ),
               const SizedBox(height: 12),
 
-              // ---- Year selector ----
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(

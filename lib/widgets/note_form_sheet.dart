@@ -2,13 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/dashboard_note.dart';
 
-// ============================================================
-// NOTE FORM SHEET
-// ------------------------------------------------------------
-// Bottom sheet used for both CREATE (existingNote == null) and
-// UPDATE (existingNote != null). Returns a DashboardNote via
-// Navigator.pop when saved, or null if cancelled.
-// ============================================================
 
 Future<DashboardNote?> showNoteFormSheet(
     BuildContext context, {
@@ -48,14 +41,6 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
 
   bool get _isEditing => widget.existingNote != null;
 
-  // ============================================================
-  // VALIDATORS
-  // ------------------------------------------------------------
-  // Real-world-style field validation: required/optional, length
-  // limits, meaningful-content checks, format sanity-checking for
-  // the highlight value, and a duplicate-title guard against the
-  // user's other saved insights.
-  // ============================================================
 
   String? _validateTitle(String? value) {
     final trimmed = value?.trim() ?? '';
@@ -74,12 +59,10 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
 
   String? _validateHighlightValue(String? value) {
     final trimmed = value?.trim() ?? '';
-    if (trimmed.isEmpty) return null; // optional field
+    if (trimmed.isEmpty) return null;
 
     if (trimmed.length > 24) return 'Keep this under 24 characters';
 
-    // Numbers only - optionally ending in "%". No letters, no
-    // stray symbols, no more than one decimal point.
     final numberPart =
     trimmed.endsWith('%') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
     final parsed = double.tryParse(numberPart);

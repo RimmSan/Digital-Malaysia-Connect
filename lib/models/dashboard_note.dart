@@ -1,19 +1,8 @@
-// ============================================================
-// DASHBOARD NOTE MODEL
-// ------------------------------------------------------------
-// Represents a personal, locally-saved "insight" that the user
-// pins to their dashboard. It doubles as:
-//   - a bookmarked/pinned indicator (title + highlightValue), and
-//   - a freeform note about something they noticed in the data.
-// This is fully user-owned data (not from the government API),
-// which is what makes CRUD possible for this module.
-// ============================================================
-
 class DashboardNote {
   final String id;
   String title;
-  String category; // 'Population' | 'Internet' | 'Domains' | 'General'
-  String? highlightValue; // optional pinned stat, e.g. "95.4%"
+  String category;
+  String? highlightValue;
   String note;
   final DateTime createdAt;
   DateTime updatedAt;
@@ -93,9 +82,7 @@ class DashboardNote {
           ? null
           : json['highlightValue'] as String?,
       note: json['note'] as String? ?? '',
-      // Fall back to "now" rather than crashing if a date is somehow
-      // missing/corrupted - losing a precise timestamp is far better
-      // than losing the whole note (and every note after it in the list).
+
       createdAt: createdAt ?? DateTime.now(),
       updatedAt: updatedAt ?? DateTime.now(),
     );

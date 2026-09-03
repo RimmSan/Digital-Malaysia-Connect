@@ -1,14 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ============================================================
-// SECTION TITLE
-// ------------------------------------------------------------
-// Every module (Dashboard, Analytics, Growth, Intelligence) has
-// section headings like "Key Digital Indicators". Use this widget
-// everywhere instead of a raw Text(...) so font size/weight stay
-// consistent, and so an optional trailing action (e.g. "See all",
-// "Add", a filter button) is laid out the same way everywhere.
-// ============================================================
 
 class SectionTitle extends StatelessWidget {
   final String title;

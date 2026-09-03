@@ -281,7 +281,7 @@ class _GrowthPageState extends State<GrowthPage> {
                 Text(
                   'Current total: ${_formatNumber(_currentTotal)} registrations',
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 13,
                   ),
                 ),
@@ -693,7 +693,7 @@ class _GrowthPageState extends State<GrowthPage> {
                 : 'Monthly cumulative registrations',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
 
@@ -835,7 +835,7 @@ class _GrowthPageState extends State<GrowthPage> {
         16,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(
           AppSpacing.cardRadius,
         ),
@@ -873,7 +873,7 @@ class _GrowthPageState extends State<GrowthPage> {
                     _formatNumber(value.toInt()),
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.grey.shade600,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   );
                 },
@@ -918,7 +918,7 @@ class _GrowthPageState extends State<GrowthPage> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     );
@@ -943,7 +943,7 @@ class _GrowthPageState extends State<GrowthPage> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   );
@@ -1079,7 +1079,7 @@ class _GrowthPageState extends State<GrowthPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(
           AppSpacing.cardRadius,
         ),
@@ -1182,7 +1182,7 @@ class _GrowthPageState extends State<GrowthPage> {
                 label,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
 
@@ -1214,7 +1214,7 @@ class _GrowthPageState extends State<GrowthPage> {
           AppSpacing.cardRadius,
         ),
         border: Border.all(
-          color: Colors.grey.shade300,
+          color: Theme.of(context).colorScheme.outlineVariant,
         ),
       ),
       child: Column(
@@ -1222,7 +1222,7 @@ class _GrowthPageState extends State<GrowthPage> {
           Icon(
             Icons.bookmark_border,
             size: 36,
-            color: Colors.grey.shade400,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
 
           const SizedBox(height: 10),
@@ -1241,7 +1241,7 @@ class _GrowthPageState extends State<GrowthPage> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],

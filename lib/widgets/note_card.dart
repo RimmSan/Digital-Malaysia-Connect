@@ -114,11 +114,7 @@ class NoteCard extends StatelessWidget {
                     ),
                   ),
                 ),
-              // ---- Edit / Delete: explicit buttons, matching the
-              // team's pattern (e.g. GrowthBookmarkCard) instead of
-              // swipe-to-dismiss. Confirmation is handled by the
-              // caller (DashboardPage._deleteNote), same as
-              // GrowthPage._deleteBookmark.
+
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.edit_outlined, size: 18),

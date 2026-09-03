@@ -1,13 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ============================================================
-// SHARED PAGE STATE VIEWS
-// ------------------------------------------------------------
-// Every module that fetches data needs the same three states:
-// loading, error (with retry), and empty. Rather than each
-// teammate re-inventing these, they live here once so all
-// modules look and behave the same way.
-// ============================================================
 
 class LoadingView extends StatelessWidget {
   const LoadingView({super.key});

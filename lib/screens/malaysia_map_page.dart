@@ -270,8 +270,6 @@ class _MalaysiaMapPageState extends State<MalaysiaMapPage> {
           borderStrokeWidth:
           isSelected ? 2.8 : 1.2,
 
-          // IMPORTANT:
-          // this tells Flutter which state was touched
           hitValue: statePolygon.stateName,
         );
       },
@@ -474,7 +472,6 @@ class _MalaysiaMapPageState extends State<MalaysiaMapPage> {
       return;
     }
 
-    // Use the first polygon that was touched.
     final state = hitValues.first;
 
     _selectState(state);
@@ -665,7 +662,6 @@ class _MalaysiaMapPageState extends State<MalaysiaMapPage> {
                         hitNotifier:
                         _polygonHitNotifier,
 
-                        // Makes boundary detection more accurate.
                         simplificationTolerance: 0,
 
                         polygons:

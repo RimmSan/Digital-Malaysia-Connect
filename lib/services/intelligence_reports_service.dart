@@ -7,10 +7,6 @@ import '../models/intelligence_report.dart';
 class IntelligenceReportsService {
   static const String _storageKey = 'intelligence_reports_v1';
 
-  // ============================================================
-  // READ
-  // ============================================================
-
   Future<List<IntelligenceReport>> getAll() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -37,10 +33,6 @@ class IntelligenceReportsService {
     return reports;
   }
 
-  // ============================================================
-  // CREATE
-  // ============================================================
-
   Future<void> create(IntelligenceReport report) async {
     final reports = await getAll();
 
@@ -48,10 +40,6 @@ class IntelligenceReportsService {
 
     await _saveAll(reports);
   }
-
-  // ============================================================
-  // UPDATE
-  // ============================================================
 
   Future<void> update(IntelligenceReport updatedReport) async {
     final reports = await getAll();
@@ -71,10 +59,6 @@ class IntelligenceReportsService {
     await _saveAll(reports);
   }
 
-  // ============================================================
-  // DELETE
-  // ============================================================
-
   Future<void> delete(String id) async {
     final reports = await getAll();
 
@@ -84,10 +68,6 @@ class IntelligenceReportsService {
 
     await _saveAll(reports);
   }
-
-  // ============================================================
-  // SAVE
-  // ============================================================
 
   Future<void> _saveAll(
       List<IntelligenceReport> reports,

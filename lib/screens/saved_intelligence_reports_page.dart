@@ -3,6 +3,13 @@ import 'package:flutter/material.dart';
 import '../models/intelligence_report.dart';
 import '../services/intelligence_reports_service.dart';
 
+enum ReportSortOption {
+  newest,
+  oldest,
+  titleAZ,
+  titleZA,
+}
+
 class SavedIntelligenceReportsPage extends StatefulWidget {
   const SavedIntelligenceReportsPage({super.key});
 
@@ -16,10 +23,12 @@ class _SavedIntelligenceReportsPageState
   final IntelligenceReportsService _reportsService =
   IntelligenceReportsService();
 
+  List<IntelligenceReport> _reports = [];
+
   bool _isLoading = true;
   bool _isUpdating = false;
 
-  List<IntelligenceReport> _reports = [];
+  ReportSortOption _sortOption = ReportSortOption.newest;
 
   static const int _minTitleLength = 3;
   static const int _maxTitleLength = 60;
@@ -31,71 +40,135 @@ class _SavedIntelligenceReportsPageState
     _loadReports();
   }
 
+
   Future<void> _loadReports() async {
     setState(() {
       _isLoading = true;
     });
 
-    final reports = await _reportsService.getAll();
+    try {
+      final reports = await _reportsService.getAll();
 
-    reports.sort(
-          (a, b) => b.updatedAt.compareTo(a.updatedAt),
-    );
+      if (!mounted) return;
 
-    if (!mounted) return;
+      setState(() {
+        _reports = reports;
+        _sortReports();
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
 
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to load saved reports.',
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+
+  void _sortReports() {
+    switch (_sortOption) {
+      case ReportSortOption.newest:
+        _reports.sort(
+              (a, b) => b.updatedAt.compareTo(a.updatedAt),
+        );
+        break;
+
+      case ReportSortOption.oldest:
+        _reports.sort(
+              (a, b) => a.updatedAt.compareTo(b.updatedAt),
+        );
+        break;
+
+      case ReportSortOption.titleAZ:
+        _reports.sort(
+              (a, b) => a.title
+              .toLowerCase()
+              .compareTo(b.title.toLowerCase()),
+        );
+        break;
+
+      case ReportSortOption.titleZA:
+        _reports.sort(
+              (a, b) => b.title
+              .toLowerCase()
+              .compareTo(a.title.toLowerCase()),
+        );
+        break;
+    }
+  }
+
+
+  void _changeSort(ReportSortOption option) {
     setState(() {
-      _reports = reports;
-      _isLoading = false;
+      _sortOption = option;
+      _sortReports();
     });
   }
 
-  // ============================================================
-  // VALIDATE REPORT TITLE
-  // ============================================================
+
+  String _sortLabel(ReportSortOption option) {
+    switch (option) {
+      case ReportSortOption.newest:
+        return 'Newest First';
+
+      case ReportSortOption.oldest:
+        return 'Oldest First';
+
+      case ReportSortOption.titleAZ:
+        return 'Title A-Z';
+
+      case ReportSortOption.titleZA:
+        return 'Title Z-A';
+    }
+  }
+
 
   String? _validateTitle(String value) {
-    final title = value.trim();
+    final trimmed = value.trim();
 
-    if (title.isEmpty) {
+    if (trimmed.isEmpty) {
       return 'Report title is required.';
     }
 
-    if (title.length < _minTitleLength) {
-      return 'Title must be at least '
-          '$_minTitleLength characters.';
+    if (trimmed.length < _minTitleLength) {
+      return 'Title must be at least $_minTitleLength characters.';
     }
 
-    if (title.length > _maxTitleLength) {
-      return 'Title cannot exceed '
-          '$_maxTitleLength characters.';
+    if (trimmed.length > _maxTitleLength) {
+      return 'Title cannot exceed $_maxTitleLength characters.';
     }
 
     return null;
   }
 
-  // ============================================================
-  // VALIDATE PERSONAL NOTE
-  // ============================================================
 
   String? _validateNote(String value) {
-    final note = value.trim();
+    final trimmed = value.trim();
 
-    if (note.length > _maxNoteLength) {
-      return 'Personal note cannot exceed '
-          '$_maxNoteLength characters.';
+    if (trimmed.length > _maxNoteLength) {
+      return 'Note cannot exceed $_maxNoteLength characters.';
     }
 
     return null;
   }
-
-  // ============================================================
-  // EDIT REPORT
-  // ============================================================
 
   Future<void> _editReport(
       IntelligenceReport report,
       ) async {
+    if (_isUpdating) return;
+
     final titleController = TextEditingController(
       text: report.title,
     );
@@ -107,9 +180,8 @@ class _SavedIntelligenceReportsPageState
     String? titleError;
     String? noteError;
 
-    final result = await showDialog<bool>(
+    final result = await showDialog<Map<String, String>>(
       context: context,
-      barrierDismissible: !_isUpdating,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
@@ -124,23 +196,18 @@ class _SavedIntelligenceReportsPageState
                     TextField(
                       controller: titleController,
                       maxLength: _maxTitleLength,
-                      textInputAction: TextInputAction.next,
                       decoration: InputDecoration(
                         labelText: 'Report Title',
                         hintText:
                         '$_minTitleLength-$_maxTitleLength characters',
-                        prefixIcon: const Icon(
-                          Icons.title_outlined,
-                        ),
-                        border: const OutlineInputBorder(),
                         errorText: titleError,
+                        border:
+                        const OutlineInputBorder(),
                       ),
-                      onChanged: (value) {
+                      onChanged: (_) {
                         if (titleError != null) {
                           setDialogState(() {
-                            titleError = _validateTitle(
-                              value,
-                            );
+                            titleError = null;
                           });
                         }
                       },
@@ -150,25 +217,21 @@ class _SavedIntelligenceReportsPageState
 
                     TextField(
                       controller: noteController,
-                      maxLines: 4,
                       maxLength: _maxNoteLength,
+                      maxLines: 5,
                       decoration: InputDecoration(
                         labelText: 'Personal Note',
                         hintText:
                         'Optional - maximum $_maxNoteLength characters',
-                        alignLabelWithHint: true,
-                        prefixIcon: const Icon(
-                          Icons.notes_outlined,
-                        ),
-                        border: const OutlineInputBorder(),
                         errorText: noteError,
+                        alignLabelWithHint: true,
+                        border:
+                        const OutlineInputBorder(),
                       ),
-                      onChanged: (value) {
+                      onChanged: (_) {
                         if (noteError != null) {
                           setDialogState(() {
-                            noteError = _validateNote(
-                              value,
-                            );
+                            noteError = null;
                           });
                         }
                       },
@@ -178,36 +241,31 @@ class _SavedIntelligenceReportsPageState
               ),
               actions: [
                 TextButton(
-                  onPressed: _isUpdating
-                      ? null
-                      : () {
-                    Navigator.pop(
-                      dialogContext,
-                      false,
-                    );
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
                   },
                   child: const Text('Cancel'),
                 ),
 
                 FilledButton(
-                  onPressed: _isUpdating
-                      ? null
-                      : () {
-                    final titleValidation =
-                    _validateTitle(
-                      titleController.text,
-                    );
+                  onPressed: () {
+                    final title =
+                    titleController.text.trim();
 
-                    final noteValidation =
-                    _validateNote(
-                      noteController.text,
-                    );
+                    final note =
+                    noteController.text.trim();
 
-                    if (titleValidation != null ||
-                        noteValidation != null) {
+                    final newTitleError =
+                    _validateTitle(title);
+
+                    final newNoteError =
+                    _validateNote(note);
+
+                    if (newTitleError != null ||
+                        newNoteError != null) {
                       setDialogState(() {
-                        titleError = titleValidation;
-                        noteError = noteValidation;
+                        titleError = newTitleError;
+                        noteError = newNoteError;
                       });
 
                       return;
@@ -215,12 +273,13 @@ class _SavedIntelligenceReportsPageState
 
                     Navigator.pop(
                       dialogContext,
-                      true,
+                      {
+                        'title': title,
+                        'note': note,
+                      },
                     );
                   },
-                  child: const Text(
-                    'Save Changes',
-                  ),
+                  child: const Text('Save Changes'),
                 ),
               ],
             );
@@ -229,39 +288,34 @@ class _SavedIntelligenceReportsPageState
       },
     );
 
-    if (result != true) {
-      titleController.dispose();
-      noteController.dispose();
-      return;
-    }
+    titleController.dispose();
+    noteController.dispose();
 
-    if (_isUpdating) {
-      titleController.dispose();
-      noteController.dispose();
-      return;
-    }
+    if (result == null) return;
 
-    final title = titleController.text.trim();
-    final note = noteController.text.trim();
+    final newTitle = result['title']?.trim() ?? '';
+    final newNote = result['note']?.trim() ?? '';
 
-    // Defensive validation before saving.
-    final titleValidation = _validateTitle(title);
-    final noteValidation = _validateNote(note);
+    final titleErrorCheck =
+    _validateTitle(newTitle);
 
-    if (titleValidation != null ||
-        noteValidation != null) {
-      titleController.dispose();
-      noteController.dispose();
+    final noteErrorCheck =
+    _validateNote(newNote);
 
+    if (titleErrorCheck != null ||
+        noteErrorCheck != null) {
       if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            titleValidation ??
-                noteValidation ??
-                'Invalid report information.',
+            titleErrorCheck ??
+                noteErrorCheck ??
+                'Invalid report input.',
           ),
+          duration: const Duration(seconds: 2),
         ),
       );
 
@@ -274,11 +328,8 @@ class _SavedIntelligenceReportsPageState
 
     try {
       final updatedReport = report.copyWith(
-        title: title,
-        note: note,
-
-        // createdAt is intentionally NOT changed.
-        // Only updatedAt changes when editing.
+        title: newTitle,
+        note: newNote,
         updatedAt: DateTime.now(),
       );
 
@@ -288,29 +339,34 @@ class _SavedIntelligenceReportsPageState
 
       if (!mounted) return;
 
+      await _loadReports();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Report updated successfully.',
           ),
+          duration: Duration(seconds: 2),
         ),
       );
-
-      await _loadReports();
     } catch (e) {
       if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Unable to update report. Please try again.',
           ),
+          duration: Duration(seconds: 2),
         ),
       );
     } finally {
-      titleController.dispose();
-      noteController.dispose();
-
       if (mounted) {
         setState(() {
           _isUpdating = false;
@@ -319,288 +375,285 @@ class _SavedIntelligenceReportsPageState
     }
   }
 
-  // ============================================================
-  // DELETE REPORT
-  // ============================================================
 
   Future<void> _deleteReport(
       IntelligenceReport report,
       ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
-          icon: const Icon(
-            Icons.delete_outline,
-            color: Colors.red,
-          ),
           title: const Text(
-            'Delete Report?',
+            'Delete Report',
           ),
           content: Text(
-            'Are you sure you want to delete "${report.title}"?',
+            'Are you sure you want to delete '
+                '"${report.title}"?',
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(
-                  context,
+                  dialogContext,
                   false,
                 );
               },
-              child: const Text('Cancel'),
+              child: const Text(
+                'Cancel',
+              ),
             ),
 
             FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
               onPressed: () {
                 Navigator.pop(
-                  context,
+                  dialogContext,
                   true,
                 );
               },
-              child: const Text('Delete'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              child: const Text(
+                'Delete',
+              ),
             ),
           ],
         );
       },
     );
 
-    if (confirmed != true) {
-      return;
-    }
+    if (confirmed != true) return;
 
-    await _reportsService.delete(
-      report.id,
-    );
+    try {
+      await _reportsService.delete(
+        report.id,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Report deleted successfully.',
+      await _loadReports();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Report deleted successfully.',
+          ),
+          duration: Duration(seconds: 2),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
 
-    await _loadReports();
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to delete report. Please try again.',
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
-  // ============================================================
-  // VIEW REPORT
-  // ============================================================
 
-  void _viewReport(
+  Future<void> _viewReport(
       IntelligenceReport report,
-      ) {
-    showModalBottomSheet(
+      ) async {
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              0,
-              20,
-              20 +
-                  MediaQuery.of(context)
-                      .viewInsets
-                      .bottom,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              bottom:
+              MediaQuery.of(sheetContext).viewInsets.bottom +
+                  24,
             ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: const Color(
-                            0xFFEAF7FC,
-                          ),
-                          borderRadius:
-                          BorderRadius.circular(
-                            14,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.insights_outlined,
-                          color: Color(
-                            0xFF168AAD,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              report.title,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight:
-                                FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              report.reportType,
-                              style: TextStyle(
-                                color: Colors
-                                    .grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  _DetailRow(
-                    label: 'State A',
-                    value: report.stateA,
-                  ),
-
-                  if (report.stateB != null &&
-                      report.stateB!
-                          .trim()
-                          .isNotEmpty)
-                    _DetailRow(
-                      label: 'State B',
-                      value: report.stateB!,
-                    ),
-
-                  const SizedBox(height: 18),
-
-                  const Text(
-                    'Generated Insight',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(
-                        0xFFEAF7FC,
-                      ),
-                      borderRadius:
-                      BorderRadius.circular(14),
-                    ),
-                    child: Text(
-                      report.insight,
-                      style: const TextStyle(
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-
-                  if (report.note
-                      .trim()
-                      .isNotEmpty) ...[
-                    const SizedBox(height: 18),
-
-                    const Text(
-                      'Personal Note',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight:
-                        FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
+            child: Column(
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
                     Container(
-                      width: double.infinity,
-                      padding:
-                      const EdgeInsets.all(16),
+                      width: 46,
+                      height: 46,
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .cardColor,
-                        borderRadius:
-                        BorderRadius.circular(
-                          14,
+                        color: const Color(
+                          0xFFEAF7FC,
                         ),
-                        border: Border.all(
-                          color: Colors.grey
-                              .withValues(
-                            alpha: 0.25,
-                          ),
+                        borderRadius:
+                        BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        _reportIcon(report),
+                        color: const Color(
+                          0xFF168AAD,
                         ),
                       ),
-                      child: Text(
-                        report.note,
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            report.title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight:
+                              FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 3),
+
+                          Text(
+                            report.reportType,
+                            style: TextStyle(
+                              color:
+                              Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
+                ),
 
-                  const SizedBox(height: 18),
+                const SizedBox(height: 24),
 
+                _DetailRow(
+                  label: 'Report Type',
+                  value: report.reportType,
+                ),
+
+                _DetailRow(
+                  label: 'State A',
+                  value: report.stateA,
+                ),
+
+                if (report.stateB != null &&
+                    report.stateB!.trim().isNotEmpty)
                   _DetailRow(
-                    label: 'Created',
-                    value: _formatDateTime(
-                      report.createdAt,
-                    ),
+                    label: 'State B',
+                    value: report.stateB!,
                   ),
 
-                  _DetailRow(
-                    label: 'Last Updated',
-                    value: _formatDateTime(
-                      report.updatedAt,
-                    ),
+                const SizedBox(height: 18),
+
+                const Text(
+                  'Generated Insight',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
 
-                  const SizedBox(height: 20),
+                const SizedBox(height: 8),
 
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-
-                        _editReport(report);
-                      },
-                      icon: const Icon(
-                        Icons.edit_outlined,
-                      ),
-                      label: const Text(
-                        'Edit Report',
-                      ),
-                      style:
-                      FilledButton.styleFrom(
-                        backgroundColor:
-                        const Color(
-                          0xFF168AAD,
-                        ),
-                        padding:
-                        const EdgeInsets
-                            .symmetric(
-                          vertical: 14,
-                        ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(
+                      0xFFEAF7FC,
+                    ),
+                    borderRadius:
+                    BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(
+                        0xFFB6D5E1,
                       ),
                     ),
                   ),
-                ],
-              ),
+                  child: Text(
+                    report.insight,
+                    style: const TextStyle(
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                const Text(
+                  'Personal Note',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  report.note.trim().isEmpty
+                      ? 'No personal note added.'
+                      : report.note,
+                  style: TextStyle(
+                    color:
+                    report.note.trim().isEmpty
+                        ? Colors.grey.shade600
+                        : null,
+                    height: 1.5,
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                _DetailRow(
+                  label: 'Created',
+                  value: _formatDateTime(
+                    report.createdAt,
+                  ),
+                ),
+
+                _DetailRow(
+                  label: 'Last Updated',
+                  value: _formatDateTime(
+                    report.updatedAt,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(
+                        sheetContext,
+                      );
+
+                      await _editReport(
+                        report,
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                    ),
+                    label: const Text(
+                      'Edit Report',
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+              ],
             ),
           ),
         );
@@ -608,9 +661,18 @@ class _SavedIntelligenceReportsPageState
     );
   }
 
-  String _formatDateTime(
-      DateTime date,
+  IconData _reportIcon(
+      IntelligenceReport report,
       ) {
+    if (report.reportType ==
+        'State Comparison') {
+      return Icons.compare_arrows_rounded;
+    }
+
+    return Icons.insights_outlined;
+  }
+
+  String _formatDateTime(DateTime date) {
     final day =
     date.day.toString().padLeft(2, '0');
 
@@ -626,28 +688,6 @@ class _SavedIntelligenceReportsPageState
     return '$day/$month/${date.year} $hour:$minute';
   }
 
-  String _getStatesText(
-      IntelligenceReport report,
-      ) {
-    if (report.stateB == null ||
-        report.stateB!.trim().isEmpty) {
-      return report.stateA;
-    }
-
-    return '${report.stateA} ↔ ${report.stateB}';
-  }
-
-  IconData _getReportIcon(
-      IntelligenceReport report,
-      ) {
-    if (report.reportType ==
-        'State Comparison') {
-      return Icons.compare_arrows_rounded;
-    }
-
-    return Icons.trending_up_rounded;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -658,168 +698,258 @@ class _SavedIntelligenceReportsPageState
       ),
       body: _isLoading
           ? const Center(
-        child:
-        CircularProgressIndicator(),
+        child: CircularProgressIndicator(),
       )
           : RefreshIndicator(
         onRefresh: _loadReports,
         child: _reports.isEmpty
-            ? ListView(
-          physics:
-          const AlwaysScrollableScrollPhysics(),
-          padding:
-          const EdgeInsets.all(
-            24,
-          ),
-          children: const [
-            SizedBox(height: 100),
-
-            Icon(
-              Icons
-                  .bookmark_border_rounded,
-              size: 70,
-              color: Colors.grey,
-            ),
-
-            SizedBox(height: 18),
-
-            Text(
-              'No Saved Reports Yet',
-              textAlign:
-              TextAlign.center,
-              style: TextStyle(
-                fontSize: 21,
-                fontWeight:
-                FontWeight.bold,
-              ),
-            ),
-
-            SizedBox(height: 8),
-
-            Text(
-              'Generate a state insight or comparison and save it here for later.',
-              textAlign:
-              TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-                height: 1.5,
-              ),
-            ),
-          ],
-        )
-            : ListView(
-          padding:
-          const EdgeInsets.all(
-            16,
-          ),
-          children: [
-            const Text(
-              'Your Intelligence Reports',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight:
-                FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 6),
-
-            Text(
-              '${_reports.length} saved report${_reports.length == 1 ? '' : 's'}',
-              style: TextStyle(
-                color: Colors
-                    .grey.shade600,
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            ..._reports.map(
-                  (report) =>
-                  _ReportCard(
-                    report: report,
-                    stateText:
-                    _getStatesText(
-                      report,
-                    ),
-                    icon:
-                    _getReportIcon(
-                      report,
-                    ),
-                    dateText:
-                    _formatDateTime(
-                      report.updatedAt,
-                    ),
-                    onView: () {
-                      _viewReport(
-                        report,
-                      );
-                    },
-                    onEdit: () {
-                      _editReport(
-                        report,
-                      );
-                    },
-                    onDelete: () {
-                      _deleteReport(
-                        report,
-                      );
-                    },
-                  ),
-            ),
-          ],
-        ),
+            ? _buildEmptyState()
+            : _buildReportsList(),
       ),
     );
   }
-}
 
-// ============================================================
-// REPORT CARD
-// ============================================================
+  Widget _buildEmptyState() {
+    return ListView(
+      physics:
+      const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(24),
+      children: [
+        SizedBox(
+          height:
+          MediaQuery.of(context).size.height *
+              0.16,
+        ),
 
-class _ReportCard extends StatelessWidget {
-  final IntelligenceReport report;
+        Icon(
+          Icons.bookmarks_outlined,
+          size: 72,
+          color: Colors.grey.shade400,
+        ),
 
-  final String stateText;
-  final String dateText;
+        const SizedBox(height: 18),
 
-  final IconData icon;
+        const Text(
+          'No Saved Reports Yet',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
 
-  final VoidCallback onView;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+        const SizedBox(height: 8),
 
-  const _ReportCard({
-    required this.report,
-    required this.stateText,
-    required this.dateText,
-    required this.icon,
-    required this.onView,
-    required this.onEdit,
-    required this.onDelete,
-  });
+        Text(
+          'Save a State Growth Insight or '
+              'State Comparison report and it '
+              'will appear here.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            height: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildReportsList() {
+    return ListView(
+      physics:
+      const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
+          crossAxisAlignment:
+          CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Your Intelligence Reports',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    '${_reports.length} saved '
+                        '${_reports.length == 1 ? 'report' : 'reports'}'
+                        ' • Maximum 50',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            PopupMenuButton<ReportSortOption>(
+              tooltip: 'Sort Reports',
+              initialValue: _sortOption,
+              onSelected: _changeSort,
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value:
+                  ReportSortOption.newest,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons
+                            .arrow_downward_rounded,
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Text('Newest First'),
+                    ],
+                  ),
+                ),
+
+                const PopupMenuItem(
+                  value:
+                  ReportSortOption.oldest,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons
+                            .arrow_upward_rounded,
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Text('Oldest First'),
+                    ],
+                  ),
+                ),
+
+                const PopupMenuDivider(),
+
+                const PopupMenuItem(
+                  value:
+                  ReportSortOption.titleAZ,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.sort_by_alpha,
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Text('Title A-Z'),
+                    ],
+                  ),
+                ),
+
+                const PopupMenuItem(
+                  value:
+                  ReportSortOption.titleZA,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.sort_by_alpha,
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Text('Title Z-A'),
+                    ],
+                  ),
+                ),
+              ],
+              child: Container(
+                padding:
+                const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.grey.shade300,
+                  ),
+                  borderRadius:
+                  BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize:
+                  MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.sort_rounded,
+                      size: 19,
+                    ),
+                    SizedBox(width: 5),
+                    Text('Sort'),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        Row(
+          children: [
+            Icon(
+              Icons.swap_vert_rounded,
+              size: 16,
+              color: Colors.grey.shade600,
+            ),
+
+            const SizedBox(width: 5),
+
+            Text(
+              'Sorted by: ${_sortLabel(_sortOption)}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+
+        ..._reports.map(
+              (report) => Padding(
+            padding:
+            const EdgeInsets.only(
+              bottom: 12,
+            ),
+            child: _buildReportCard(
+              report,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _buildReportCard(
+      IntelligenceReport report,
+      ) {
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: 14,
-      ),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius:
         BorderRadius.circular(18),
         side: BorderSide(
-          color: Colors.grey.withValues(
-            alpha: 0.20,
-          ),
+          color: Colors.grey.shade300,
         ),
       ),
       child: InkWell(
         borderRadius:
         BorderRadius.circular(18),
-        onTap: onView,
+        onTap: () {
+          _viewReport(report);
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -834,12 +964,10 @@ class _ReportCard extends StatelessWidget {
                     0xFFEAF7FC,
                   ),
                   borderRadius:
-                  BorderRadius.circular(
-                    14,
-                  ),
+                  BorderRadius.circular(14),
                 ),
                 child: Icon(
-                  icon,
+                  _reportIcon(report),
                   color: const Color(
                     0xFF168AAD,
                   ),
@@ -868,16 +996,33 @@ class _ReportCard extends StatelessWidget {
                     const SizedBox(height: 5),
 
                     Text(
-                      stateText,
+                      report.reportType,
                       style: const TextStyle(
                         color:
                         Color(0xFF168AAD),
+                        fontSize: 13,
                         fontWeight:
                         FontWeight.w600,
                       ),
                     ),
 
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 7),
+
+                    Text(
+                      report.stateB == null ||
+                          report.stateB!
+                              .trim()
+                              .isEmpty
+                          ? report.stateA
+                          : '${report.stateA} vs ${report.stateB}',
+                      style: TextStyle(
+                        color:
+                        Colors.grey.shade700,
+                        fontSize: 13,
+                      ),
+                    ),
+
+                    const SizedBox(height: 7),
 
                     Row(
                       children: [
@@ -885,78 +1030,54 @@ class _ReportCard extends StatelessWidget {
                           Icons
                               .schedule_outlined,
                           size: 14,
-                          color: Colors
-                              .grey.shade500,
+                          color:
+                          Colors.grey.shade500,
                         ),
 
-                        const SizedBox(
-                          width: 4,
-                        ),
+                        const SizedBox(width: 4),
 
-                        Text(
-                          dateText,
-                          style: TextStyle(
-                            color: Colors
-                                .grey.shade600,
-                            fontSize: 12,
+                        Expanded(
+                          child: Text(
+                            'Updated '
+                                '${_formatDateTime(report.updatedAt)}',
+                            style: TextStyle(
+                              color:
+                              Colors.grey.shade500,
+                              fontSize: 11,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Container(
-                      padding:
-                      const EdgeInsets
-                          .symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration:
-                      BoxDecoration(
-                        color: const Color(
-                          0xFFEAF7FC,
-                        ),
-                        borderRadius:
-                        BorderRadius.circular(
-                          20,
-                        ),
-                      ),
-                      child: Text(
-                        report.reportType,
-                        style:
-                        const TextStyle(
-                          color: Color(
-                            0xFF075985,
-                          ),
-                          fontSize: 11,
-                          fontWeight:
-                          FontWeight.w600,
-                        ),
-                      ),
                     ),
                   ],
                 ),
               ),
 
               PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'view') {
-                    onView();
-                  }
+                tooltip: 'Report Options',
+                onSelected: (value) async {
+                  switch (value) {
+                    case 'view':
+                      await _viewReport(
+                        report,
+                      );
+                      break;
 
-                  if (value == 'edit') {
-                    onEdit();
-                  }
+                    case 'edit':
+                      await _editReport(
+                        report,
+                      );
+                      break;
 
-                  if (value == 'delete') {
-                    onDelete();
+                    case 'delete':
+                      await _deleteReport(
+                        report,
+                      );
+                      break;
                   }
                 },
-                itemBuilder:
-                    (context) => const [
-                  PopupMenuItem(
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
                     value: 'view',
                     child: Row(
                       children: [
@@ -970,7 +1091,7 @@ class _ReportCard extends StatelessWidget {
                     ),
                   ),
 
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
@@ -983,7 +1104,9 @@ class _ReportCard extends StatelessWidget {
                     ),
                   ),
 
-                  PopupMenuItem(
+                  const PopupMenuDivider(),
+
+                  const PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
@@ -1011,9 +1134,6 @@ class _ReportCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// DETAIL ROW
-// ============================================================
 
 class _DetailRow extends StatelessWidget {
   final String label;
@@ -1027,8 +1147,9 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 9,
+      padding:
+      const EdgeInsets.only(
+        bottom: 10,
       ),
       child: Row(
         crossAxisAlignment:
@@ -1039,8 +1160,9 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color:
-                Colors.grey.shade600,
+                color: Colors.grey.shade600,
+                fontWeight:
+                FontWeight.w500,
               ),
             ),
           ),

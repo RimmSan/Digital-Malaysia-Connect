@@ -1,14 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ============================================================
-// SEARCH RESULT ITEM
-// ------------------------------------------------------------
-// A single row shown under the dashboard's global search bar.
-// Category is a short label like "State", "Metric", "Dataset" or
-// "My Insight" so results from different sources are visually
-// distinguishable.
-// ============================================================
-
 class SearchResultItem {
   final String title;
   final String subtitle;

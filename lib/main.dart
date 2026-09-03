@@ -19,7 +19,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Rebuilds MaterialApp whenever Settings changes the theme mode.
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeService.themeMode,
       builder: (context, mode, _) {
@@ -47,10 +46,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// MAIN NAVIGATION SHELL (Bottom Nav Bar)
-// ============================================================
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
