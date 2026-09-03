@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/watchlist_alert.dart';
 import '../theme/app_colors.dart';
@@ -10,11 +11,20 @@ import '../theme/app_colors.dart';
 // WatchlistAlert. Pass `existingAlert` to edit; omit it to
 // create a new one. Mirrors the NoteFormSheet pattern already
 // used by the Dashboard's "My Insights" CRUD.
+//
+// Validation rules enforced here:
+//   - Threshold is required (can't be blank).
+//   - Integers only (no decimals) - enforced both by input
+//     formatter (blocks typing '.') and by a parse check.
+//   - Must be between 0 and 999 inclusive.
+//   - Can't create a duplicate alert (same metric + same
+//     direction) that already exists in the watchlist.
 // ============================================================
 
 Future<WatchlistAlert?> showWatchlistFormSheet(
     BuildContext context, {
       WatchlistAlert? existingAlert,
+      List<WatchlistAlert> existingAlerts = const [],
     }) {
   return showModalBottomSheet<WatchlistAlert>(
     context: context,
@@ -22,23 +32,34 @@ Future<WatchlistAlert?> showWatchlistFormSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (context) => _WatchlistFormSheet(existingAlert: existingAlert),
+    builder: (context) => _WatchlistFormSheet(
+      existingAlert: existingAlert,
+      existingAlerts: existingAlerts,
+    ),
   );
 }
 
 class _WatchlistFormSheet extends StatefulWidget {
   final WatchlistAlert? existingAlert;
+  final List<WatchlistAlert> existingAlerts;
 
-  const _WatchlistFormSheet({this.existingAlert});
+  const _WatchlistFormSheet({
+    this.existingAlert,
+    this.existingAlerts = const [],
+  });
 
   @override
   State<_WatchlistFormSheet> createState() => _WatchlistFormSheetState();
 }
 
 class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
+  static const int _minThreshold = 0;
+  static const int _maxThreshold = 999;
+
   late String _metricKey;
   late WatchlistDirection _direction;
   late TextEditingController _thresholdController;
+  String? _errorText;
 
   bool get _isEditing => widget.existingAlert != null;
 
@@ -49,7 +70,7 @@ class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
     _metricKey = existing?.metricKey ?? WatchlistAlert.metricKeys.first;
     _direction = existing?.direction ?? WatchlistDirection.above;
     _thresholdController = TextEditingController(
-      text: existing != null ? existing.threshold.toString() : '',
+      text: existing != null ? existing.threshold.toInt().toString() : '',
     );
   }
 
@@ -59,21 +80,68 @@ class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
     super.dispose();
   }
 
+  /// Returns an error message if invalid, or null if the value is valid.
+  String? _validateThreshold(String rawInput) {
+    final trimmed = rawInput.trim();
+
+    if (trimmed.isEmpty) {
+      return 'Enter a threshold value.';
+    }
+
+    // Integers only - reject anything that isn't a whole number
+    // (this also catches stray '-' or '.' that slipped past the
+    // input formatter, e.g. via paste).
+    final intValue = int.tryParse(trimmed);
+    if (intValue == null) {
+      return 'Whole numbers only (no decimals or symbols).';
+    }
+
+    if (intValue < _minThreshold) {
+      return 'Threshold cannot be negative.';
+    }
+
+    if (intValue > _maxThreshold) {
+      return 'Threshold cannot be more than $_maxThreshold.';
+    }
+
+    return null;
+  }
+
+  bool _isDuplicate(int thresholdValue) {
+    return widget.existingAlerts.any((a) {
+      final isSameEntity = _isEditing && a.id == widget.existingAlert!.id;
+      if (isSameEntity) return false; // editing itself isn't a duplicate
+      return a.metricKey == _metricKey && a.direction == _direction;
+    });
+  }
+
   void _save() {
-    final thresholdValue = double.tryParse(_thresholdController.text.trim());
-    if (thresholdValue == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid number for the threshold.')),
-      );
+    final rawInput = _thresholdController.text;
+    final error = _validateThreshold(rawInput);
+
+    if (error != null) {
+      setState(() => _errorText = error);
       return;
     }
+
+    final intValue = int.parse(rawInput.trim());
+
+    if (_isDuplicate(intValue)) {
+      setState(() {
+        _errorText =
+        'You already have a ${_direction.name} alert for ${WatchlistAlert.labelFor(_metricKey)}.';
+      });
+      return;
+    }
+
+    setState(() => _errorText = null);
 
     final now = DateTime.now();
     final result = WatchlistAlert(
       id: widget.existingAlert?.id ?? now.microsecondsSinceEpoch.toString(),
       metricKey: _metricKey,
       metricLabel: WatchlistAlert.labelFor(_metricKey),
-      threshold: thresholdValue,
+      threshold: intValue.toDouble(),
       direction: _direction,
       createdAt: widget.existingAlert?.createdAt ?? now,
       updatedAt: now,
@@ -111,7 +179,10 @@ class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
               return ChoiceChip(
                 label: Text(WatchlistAlert.labelFor(key)),
                 selected: selected,
-                onSelected: (_) => setState(() => _metricKey = key),
+                onSelected: (_) => setState(() {
+                  _metricKey = key;
+                  _errorText = null;
+                }),
                 selectedColor: AppColors.primary,
                 labelStyle: TextStyle(
                   color: selected ? Colors.white : Colors.grey.shade700,
@@ -130,8 +201,10 @@ class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
                 child: ChoiceChip(
                   label: const Text('Above'),
                   selected: _direction == WatchlistDirection.above,
-                  onSelected: (_) =>
-                      setState(() => _direction = WatchlistDirection.above),
+                  onSelected: (_) => setState(() {
+                    _direction = WatchlistDirection.above;
+                    _errorText = null;
+                  }),
                   selectedColor: AppColors.success,
                   labelStyle: TextStyle(
                     color: _direction == WatchlistDirection.above
@@ -145,8 +218,10 @@ class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
                 child: ChoiceChip(
                   label: const Text('Below'),
                   selected: _direction == WatchlistDirection.below,
-                  onSelected: (_) =>
-                      setState(() => _direction = WatchlistDirection.below),
+                  onSelected: (_) => setState(() {
+                    _direction = WatchlistDirection.below;
+                    _errorText = null;
+                  }),
                   selectedColor: AppColors.danger,
                   labelStyle: TextStyle(
                     color: _direction == WatchlistDirection.below
@@ -159,20 +234,51 @@ class _WatchlistFormSheetState extends State<_WatchlistFormSheet> {
           ),
           const SizedBox(height: 16),
 
-          const Text('Threshold value',
-              style: TextStyle(fontWeight: FontWeight.w600)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Threshold value',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                '0 - $_maxThreshold',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: _thresholdController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: TextInputType.number,
+            // Integers only: digits 0-9, max 3 characters (covers 0-999).
+            // This blocks '.', '-', 'e', letters, etc. at the keyboard level.
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(3),
+            ],
+            onChanged: (_) {
+              if (_errorText != null) setState(() => _errorText = null);
+            },
             decoration: InputDecoration(
               hintText: 'e.g. 90',
               isDense: true,
+              errorText: _errorText,
               contentPadding:
               const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.danger),
               ),
             ),
           ),

@@ -28,6 +28,9 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  share_plus: ^10.1.0
+  path_provider: ^2.1.4
+  excel: ^4.0.6
   flutter:
     sdk: flutter
 
