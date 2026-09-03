@@ -6,6 +6,7 @@ import 'screens/growth_page.dart';
 import 'screens/intelligence_page.dart';
 import 'screens/settings_page.dart';
 import 'services/theme_service.dart';
+import 'screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,7 @@ class MyApp extends StatelessWidget {
       valueListenable: ThemeService.themeMode,
       builder: (context, mode, _) {
         return MaterialApp(
+
           title: 'Digital Malaysia Connect',
           debugShowCheckedModeBanner: false,
           themeMode: mode,
@@ -36,7 +38,10 @@ class MyApp extends StatelessWidget {
             brightness: Brightness.dark,
             useMaterial3: true,
           ),
-          home: const MainNavigation(),
+
+            home: const SplashScreen(
+              nextScreen: MainNavigation(),
+            )
         );
       },
     );

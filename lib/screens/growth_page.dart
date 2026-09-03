@@ -550,11 +550,16 @@ class _GrowthPageState extends State<GrowthPage> {
       return 'Value must be greater than 0';
     }
 
-    // NOTE: Intentionally no upper-bound check against _currentTotal.
-    // Allowing a snapshot value higher than the live current total lets
-    // you manually create/edit a snapshot representing an earlier,
-    // higher figure - useful for demoing a "decline since snapshot"
-    // comparison even in periods where live data only shows growth.
+    // Sanity ceiling: a .my domain registration count can never realistically
+    // exceed Malaysia's total population (~34.39M as of the latest dataset).
+    // This still allows values higher than the current registration total
+    // (for testing decline scenarios), while blocking obviously invalid
+    // input like accidental extra zeros.
+    const maxPlausibleValue = 50000000; // 50M — population + safety margin
+
+    if (parsed > maxPlausibleValue) {
+      return 'Value seems unrealistic (exceeds Malaysia\'s population)';
+    }
 
     return null;
   }
