@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/dashboard_note.dart';
 
 // ============================================================
@@ -12,19 +13,27 @@ import '../models/dashboard_note.dart';
 Future<DashboardNote?> showNoteFormSheet(
     BuildContext context, {
       DashboardNote? existingNote,
+      Set<String> existingTitles = const {},
     }) {
   return showModalBottomSheet<DashboardNote>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (ctx) => _NoteFormSheet(existingNote: existingNote),
+    builder: (ctx) => _NoteFormSheet(
+      existingNote: existingNote,
+      existingTitles: existingTitles,
+    ),
   );
 }
 
 class _NoteFormSheet extends StatefulWidget {
   final DashboardNote? existingNote;
+  final Set<String> existingTitles;
 
-  const _NoteFormSheet({this.existingNote});
+  const _NoteFormSheet({
+    this.existingNote,
+    this.existingTitles = const {},
+  });
 
   @override
   State<_NoteFormSheet> createState() => _NoteFormSheetState();
@@ -38,6 +47,58 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
   late String _category;
 
   bool get _isEditing => widget.existingNote != null;
+
+  // ============================================================
+  // VALIDATORS
+  // ------------------------------------------------------------
+  // Real-world-style field validation: required/optional, length
+  // limits, meaningful-content checks, format sanity-checking for
+  // the highlight value, and a duplicate-title guard against the
+  // user's other saved insights.
+  // ============================================================
+
+  String? _validateTitle(String? value) {
+    final trimmed = value?.trim() ?? '';
+
+    if (trimmed.isEmpty) return 'Title is required';
+    if (trimmed.length < 3) return 'Title must be at least 3 characters';
+    if (trimmed.length > 60) return 'Title must be 60 characters or fewer';
+    if (!RegExp(r'[a-zA-Z0-9]').hasMatch(trimmed)) {
+      return 'Title must contain at least one letter or number';
+    }
+    if (widget.existingTitles.contains(trimmed.toLowerCase())) {
+      return 'You already have an insight with this title';
+    }
+    return null;
+  }
+
+  String? _validateHighlightValue(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return null; // optional field
+
+    if (trimmed.length > 24) return 'Keep this under 24 characters';
+
+    // Numbers only - optionally ending in "%". No letters, no
+    // stray symbols, no more than one decimal point.
+    final numberPart =
+    trimmed.endsWith('%') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
+    final parsed = double.tryParse(numberPart);
+
+    if (parsed == null) {
+      return 'Numbers only, e.g. "95.4" or "95.4%"';
+    }
+    if (parsed < 0 || parsed > 1000) {
+      return 'Value looks out of range';
+    }
+
+    return null;
+  }
+
+  String? _validateNote(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.length > 500) return 'Note must be 500 characters or fewer';
+    return null;
+  }
 
   @override
   void initState() {
@@ -91,6 +152,7 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: Form(
           key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,15 +182,9 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
                   labelText: 'Title',
                   hintText: 'e.g. Rural internet gap',
                   border: OutlineInputBorder(),
-                  counterText: '',
                 ),
                 maxLength: 60,
-                validator: (v) {
-                  final trimmed = v?.trim() ?? '';
-                  if (trimmed.isEmpty) return 'Title is required';
-                  if (trimmed.length > 60) return 'Title is too long';
-                  return null;
-                },
+                validator: _validateTitle,
                 textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 12),
@@ -150,11 +206,15 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
                 controller: _valueController,
                 decoration: const InputDecoration(
                   labelText: 'Highlight value (optional)',
-                  hintText: 'e.g. 95.4% or Selangor',
+                  hintText: 'e.g. 95.4 or 95.4%',
                   border: OutlineInputBorder(),
-                  counterText: '',
                 ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.%]')),
+                ],
                 maxLength: 24,
+                validator: _validateHighlightValue,
                 textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 12),
@@ -167,6 +227,7 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
                   alignLabelWithHint: true,
                 ),
                 maxLength: 500,
+                validator: _validateNote,
                 minLines: 3,
                 maxLines: 5,
               ),

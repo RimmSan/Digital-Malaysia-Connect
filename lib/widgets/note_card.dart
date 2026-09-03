@@ -50,124 +50,100 @@ class NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dismissible(
-      key: ValueKey(note.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: Colors.red.shade400,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: const Icon(Icons.delete_outline, color: Colors.white),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
       ),
-      confirmDismiss: (_) async {
-        return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Delete insight?'),
-            content: Text('"${note.title}" will be removed.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: _categoryColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(_categoryIcon, color: _categoryColor, size: 20),
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete'),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      note.title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${note.category} · ${_timeAgo(note.updatedAt)}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (note.highlightValue != null &&
+                  note.highlightValue!.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _categoryColor.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    note.highlightValue!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: _categoryColor,
+                    ),
+                  ),
+                ),
+              // ---- Edit / Delete: explicit buttons, matching the
+              // team's pattern (e.g. GrowthBookmarkCard) instead of
+              // swipe-to-dismiss. Confirmation is handled by the
+              // caller (DashboardPage._deleteNote), same as
+              // GrowthPage._deleteBookmark.
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                onPressed: onEdit,
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.delete_outline, size: 18),
+                color: Colors.red.shade400,
+                onPressed: onDelete,
               ),
             ],
           ),
-        ) ??
-            false;
-      },
-      onDismissed: (_) => onDelete(),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: _categoryColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(_categoryIcon, color: _categoryColor, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        note.title,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '${note.category} · ${_timeAgo(note.updatedAt)}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (note.highlightValue != null &&
-                    note.highlightValue!.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _categoryColor.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      note.highlightValue!,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: _categoryColor,
-                      ),
-                    ),
-                  ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  onPressed: onEdit,
-                ),
-              ],
-            ),
-            if (note.note.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                note.note,
-                style: TextStyle(
-                  fontSize: 13,
-                  height: 1.4,
-                  color: Colors.grey.shade700,
-                ),
+          if (note.note.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              note.note,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.4,
+                color: Colors.grey.shade700,
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }

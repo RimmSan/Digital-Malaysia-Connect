@@ -20,9 +20,6 @@ import '../models/search_result_item.dart';
 import '../services/dashboard_preference_service.dart';
 import '../widgets/dashboard_customize_sheet.dart';
 import '../utils/dashboard_stats.dart';
-import 'analytics_page.dart';
-import 'growth_page.dart';
-import 'intelligence_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -144,7 +141,10 @@ class _DashboardPageState extends State<DashboardPage> {
   // ============================================================
 
   Future<void> _createNote() async {
-    final result = await showNoteFormSheet(context);
+    final result = await showNoteFormSheet(
+      context,
+      existingTitles: _notes.map((n) => n.title.toLowerCase()).toSet(),
+    );
     if (result != null) {
       try {
         await _notesService.create(result);
@@ -156,7 +156,14 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _editNote(DashboardNote note) async {
-    final result = await showNoteFormSheet(context, existingNote: note);
+    final result = await showNoteFormSheet(
+      context,
+      existingNote: note,
+      existingTitles: _notes
+          .where((n) => n.id != note.id)
+          .map((n) => n.title.toLowerCase())
+          .toSet(),
+    );
     if (result != null) {
       try {
         await _notesService.update(result);
@@ -167,18 +174,40 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  Future<void> _deleteNote(String id) async {
-    final removed = _notes.firstWhere((n) => n.id == id);
-    final removedIndex = _notes.indexOf(removed);
-    setState(() => _notes.removeWhere((n) => n.id == id));
+  Future<void> _deleteNote(DashboardNote note) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete insight?'),
+        content: Text('Remove "${note.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final removedIndex = _notes.indexWhere((n) => n.id == note.id);
+    setState(() => _notes.removeWhere((n) => n.id == note.id));
     try {
-      await _notesService.delete(id);
+      await _notesService.delete(note.id);
     } catch (e) {
       // Roll back the optimistic UI update if the delete didn't
       // actually persist, so the list doesn't silently drift out of
       // sync with what's stored on disk.
       if (mounted) {
-        setState(() => _notes.insert(removedIndex, removed));
+        setState(() => _notes.insert(removedIndex, note));
         _showSnackBar('Could not delete that insight. Please try again.');
       }
     }
@@ -772,60 +801,12 @@ class _DashboardPageState extends State<DashboardPage> {
                     return NoteCard(
                       note: note,
                       onEdit: () => _editNote(note),
-                      onDelete: () => _deleteNote(note.id),
+                      onDelete: () => _deleteNote(note),
                     );
                   },
                 ),
 
               const SizedBox(height: AppSpacing.sectionGap - 12),
-
-              // ============================================================
-              // QUICK ACTIONS (compact icon row)
-              // ============================================================
-              const SectionTitle(title: 'Quick Actions'),
-              const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _QuickActionIcon(
-                      icon: Icons.bar_chart_outlined,
-                      label: 'Analytics',
-                      color: AppColors.internet,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const AnalyticsPage()),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: _QuickActionIcon(
-                      icon: Icons.trending_up,
-                      label: 'Growth',
-                      color: AppColors.population,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const GrowthPage()),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: _QuickActionIcon(
-                      icon: Icons.public,
-                      label: 'Intelligence',
-                      color: AppColors.domains,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const IntelligencePage(),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
 
               // ============================================================
               // DATA SOURCE / REFRESH TIME
@@ -909,53 +890,6 @@ class _TrendCard extends StatelessWidget {
           const SizedBox(height: 12),
           SparklineChart(values: values, color: color),
         ],
-      ),
-    );
-  }
-}
-
-// ============================================================
-// QUICK ACTION ICON (compact, mockup-style)
-// ============================================================
-
-class _QuickActionIcon extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickActionIcon({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Column(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
       ),
     );
   }
